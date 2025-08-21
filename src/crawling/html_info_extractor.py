@@ -1,6 +1,4 @@
 from bs4 import BeautifulSoup
-import pandas as pd
-import re
 from job_crawler import crawl_job_html_from_saramin
 import sys
 
