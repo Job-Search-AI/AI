@@ -108,13 +108,14 @@ def print_job_summary(job_data):
         print(f"    경력: {job['경력']}")
         print(f"    학력: {job['학력']}")
         print(f"    마감일: {job['마감일']}")
-        print()
+        print(f"    지원링크: {job['지원링크']}")
+        print("-"*100)
 
 # 사용 예시
 if __name__ == "__main__":
     # 프론트엔드에서 받은 정보
     user_info = {
-        "cat_kewd": "84", # 직무 코드
+        "cat_kewd": "92", # 직무 코드
         "keydownAccess": "", # 검색 키워드
         "loc_mcd": "101000", # 지역 코드
         "exp_cd": "1", # 경력 코드

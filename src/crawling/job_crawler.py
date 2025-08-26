@@ -12,6 +12,7 @@ import time
 # 셀레니움을 사용한 HTML 데이터 추출
 def crawl_job_html_from_saramin(user_info):
     # Chrome 옵션 설정
+    print("셀레니움 초기화 시작...")
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--headless')  # 헤드리스 모드 (브라우저 창 숨김)
     chrome_options.add_argument('--no-sandbox')
@@ -22,18 +23,18 @@ def crawl_job_html_from_saramin(user_info):
     
     # ChromeDriver 자동 설치 및 WebDriver 초기화
     driver = webdriver.Chrome(options=chrome_options)
-
+    print("셀레니움 초기화 완료")
     try:
         # URL 구성
         base_url = "https://www.saramin.co.kr/zf_user/search"
         query_params = "&".join([f"{key}={value}" for key, value in user_info.items()])
         full_url = f"{base_url}?{query_params}"
-        
+        print("페이지 로드 시작...")
         print(f"접속 URL: {full_url}")
         
         # 페이지 로드
         driver.get(full_url)
-        
+        print("페이지 로드 완료")
         # 페이지가 완전히 로드될 때까지 대기
         wait = WebDriverWait(driver, 10)
         try:
@@ -46,9 +47,10 @@ def crawl_job_html_from_saramin(user_info):
         # 추가 대기 시간 (동적 콘텐츠 로딩을 위해)
         time.sleep(3)
         
-        # 특정 영역만 추출
         try:
+            # 공고정보만 추출
             target_elements = driver.find_elements(By.CLASS_NAME, "item_recruit")
+            print(f"채용 정보 영역 수: {len(target_elements)}개")
             if target_elements:
                 # 모든 item_recruit 요소의 HTML을 합치기
                 html_parts = []
@@ -91,7 +93,7 @@ if __name__ == "__main__":
 
     # 사람인 채용 정보 html 추출
     html_content = crawl_job_html_from_saramin(user_info)
-    
+    print(html_content)
     # 채용 정보 추출
     # job_data = extract_job_major_info(html_content)
 
