@@ -1,0 +1,1 @@
+from .model import similarity_docs_retrieval
