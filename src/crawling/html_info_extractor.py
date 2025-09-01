@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from job_crawler import crawl_job_html_from_saramin
+from .job_crawler import crawl_job_html_from_saramin
 import sys
 
 sys.path.insert(0, "/content/drive/MyDrive/ai_enginner/job_search/AI/")
