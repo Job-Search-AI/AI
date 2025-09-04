@@ -2,14 +2,10 @@ import torch
 import os
 import sys
 # python -m src.embedding.model
-# 코랩 기본 패키지 사용 (로컬 패키지 경로 제거)
-# 로컬 패키지에서는 사용불가능
-# 그 이유는 로컬 패키지에는 알맞은 cuda pytorch 라이브러리를 설치하지 않음. Compute platform이 12.4 이여야하지만, 그 버전은 안보임
-# pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-# 위 경로로 설치해야할것 같음.
 
-cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
-os.environ['HF_HOME'] = cache_dir
+# 이 파일을 단독으로 실행시킬시 아래의 두 주석을 풀고 실행시켜야 캐쉬저장된다.
+# cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
+# os.environ['HF_HOME'] = cache_dir
 
 from sentence_transformers import SentenceTransformer
 from src.utils import dict_to_str
