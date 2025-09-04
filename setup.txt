@@ -1,0 +1,2 @@
+git config --global user.name "AI-Dev-Lex-Kim"
+git config --global user.email "kimeojin1995@gmail.com"
