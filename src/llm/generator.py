@@ -1,12 +1,15 @@
-from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
-from src.utils import dict_to_str
-import torch
 import os
 import sys
 
-cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
-os.environ['HF_HOME'] = cache_dir
-sys.path.append(cache_dir)
+# 단독으로 이 파일을 실행시, 아래 두 주석을 풀어야 모델이 캐쉬에 저장된다.
+# 아래 두 주석은 transformers 라이브러리 import 보다 위에 존재해야한다.
+# cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
+# os.environ['HF_HOME'] = cache_dir
+
+import torch
+from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
+
+from src.utils import dict_to_str
 
 def generate_response(user_prompt, documents):
     """
