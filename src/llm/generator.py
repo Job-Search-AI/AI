@@ -1,11 +1,35 @@
 from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
+from src.utils import dict_to_str
 import torch
-
+import os
 import sys
-sys.path.insert(0, "/content/drive/MyDrive/ai_enginner/job_search/AI/")
+
+cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
+os.environ['HF_HOME'] = cache_dir
+sys.path.append(cache_dir)
 
 def generate_response(user_prompt, documents):
-    # 모델, 토크나이저 로드 - 로컬 경로 직접 사용
+    """
+    LLM을 사용하여 응답을 생성하는 함수
+    
+    Args:
+        user_prompt (str): 사용자 프롬프트
+        documents (list: [dict, dict, ...]): 분석할 문서
+    
+    Examples:
+        user_prompt = "모집된 공고 축약해줘."
+        documents = [
+            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
+            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
+        ]
+    
+    Returns:
+        str: 생성된 응답
+    """
+    # device 선택
+    device = "cuda"
+    
+    # 모델, 토크나이저 로드
     model_name = "skt/A.X-4.0-Light"
 
     bnb_config = BitsAndBytesConfig(
@@ -15,22 +39,28 @@ def generate_response(user_prompt, documents):
         bnb_4bit_use_double_quant=True,
         bnb_4bit_quant_storage=torch.bfloat16,
     )
-
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config,
         torch_dtype=torch.bfloat16,
+        cache_dir=cache_dir,
+        device_map="auto"
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 
-    # instruct와 user 메시지 생성
-    user_prompt = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."
-    documents = "취업 공고 정보: 취업 공고 정보는 취업 공고 정보입니다."
+    # docs 문자열로 변환 
+    str_documents = ''
+    
+    for i, doc_obj in enumerate(documents):
+        str_documents += f'[{i}] \n '
+        for key, value in doc_obj.items():
+            str_documents += f'{key}: {value} | '
+        str_documents += '\n'
 
     # instruct와 user 메시지 생성
     chat = [
-        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + documents},
+        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + str_documents},
         {"role": "user", "content": user_prompt}
     ]
 
@@ -42,17 +72,18 @@ def generate_response(user_prompt, documents):
                 return_dict=True,
                 return_tensors="pt"
             )
-    inputs = inputs.to("cuda")
+    
+    inputs = inputs.to(device)
 
     output_ids = model.generate(
-    **inputs,
-    max_length=1024,
-    do_sample=True,
-    stop_strings=["<|endofturn|>", "<|stop|>"],
-    temperature=0.5,
-    top_p=0.6,
-    repetition_penalty=1.05,
-    tokenizer=tokenizer
+        **inputs,
+        max_length=1024,
+        do_sample=True,
+        stop_strings=["<|endofturn|>", "<|stop|>"],
+        temperature=0.5,
+        top_p=0.6,
+        repetition_penalty=1.05,
+        tokenizer=tokenizer
     )
 
     len_input_prompt = len(inputs[0])
@@ -63,7 +94,9 @@ def generate_response(user_prompt, documents):
 if __name__ == "__main__":
     user_prompt = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."
     documents = "취업 공고 정보: 취업 공고 정보는 취업 공고 정보입니다."
+    
+    # python -m src.llm.generator
     response = generate_response(user_prompt, documents)
-    print(response)
-
+    print(f"응답: {response}")
+    
 

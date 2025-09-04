@@ -1,7 +1,5 @@
 import sys
-
-sys.path.insert(0, "/content/drive/MyDrive/ai_enginner/job_search/AI/")
-sys.path.insert(0, "/content/drive/MyDrive/package")
+import os
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -76,6 +74,7 @@ def crawl_job_html_from_saramin(user_info):
         driver.quit()
 
 if __name__ == "__main__":
+    # python -m src.crawling.job_crawler
     print("사람인 채용 정보 추출 시작...")
 
     # 프론트엔드에서 받은 정보
@@ -94,14 +93,3 @@ if __name__ == "__main__":
     # 사람인 채용 정보 html 추출
     html_content = crawl_job_html_from_saramin(user_info)
     print(html_content)
-    # 채용 정보 추출
-    # job_data = extract_job_major_info(html_content)
-
-    # print(job_data)
-    
-    # # 결과 출력
-    # print_job_summary(job_data)
-    
-    # # DataFrame 생성 및 상세 출력
-    # df = pd.DataFrame(job_data)
-    # print_dataframe_pretty(df)

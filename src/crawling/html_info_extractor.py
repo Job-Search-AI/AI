@@ -1,9 +1,9 @@
-from bs4 import BeautifulSoup
-from job_crawler import crawl_job_html_from_saramin
+import os
 import sys
 
-sys.path.insert(0, "/content/drive/MyDrive/ai_enginner/job_search/AI/")
-sys.path.insert(0, "/content/drive/MyDrive/package")
+from bs4 import BeautifulSoup
+from src.crawling.job_crawler import crawl_job_html_from_saramin
+
 def extract_job_major_info(html_content):
     """
     HTML에서 .item_recruit 클래스를 가진 채용 정보를 추출하는 함수  
@@ -63,8 +63,6 @@ def extract_job_major_info(html_content):
                 if date_span:
                     deadline = date_span.get_text(strip=True)
             
-
-            
             # 지원링크 - job_tit의 a 태그 href 사용
             apply_link = ""
             if job_title_element:
@@ -84,13 +82,13 @@ def extract_job_major_info(html_content):
                 '마감일': deadline,
                 '지원링크': apply_link
             }
-            
+
             job_data.append(job_info)
             
         except Exception as e:
             print(f"채용 정보 추출 중 오류 발생: {e}")
             continue
-    
+
     return job_data
 
 def print_job_summary(job_data):
@@ -113,6 +111,7 @@ def print_job_summary(job_data):
 
 # 사용 예시
 if __name__ == "__main__":
+    # python -m src.crawling.html_info_extractor
     # 프론트엔드에서 받은 정보
     user_info = {
         "cat_kewd": "92", # 직무 코드
@@ -126,7 +125,7 @@ if __name__ == "__main__":
         "search_done": "y", # 검색 완료
     }
 
-    # 사람인 채용 정보 html 추출
+    # # 사람인 채용 정보 html 추출
     html_content = crawl_job_html_from_saramin(user_info)
 
     # #content > div.recruit_list_renew > div 영역 내의 채용 정보 추출
