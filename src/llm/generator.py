@@ -9,8 +9,6 @@ import sys
 import torch
 from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
 
-from src.utils import dict_to_str
-
 def generate_response(user_prompt, documents):
     """
     LLM을 사용하여 응답을 생성하는 함수
@@ -45,12 +43,11 @@ def generate_response(user_prompt, documents):
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config,
-        torch_dtype=torch.bfloat16,
-        cache_dir=cache_dir,
+        dtype=torch.bfloat16,
         device_map="auto"
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     # docs 문자열로 변환 
     str_documents = ''

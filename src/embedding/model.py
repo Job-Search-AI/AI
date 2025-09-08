@@ -96,4 +96,3 @@ if __name__ == '__main__':
     ]
 
     doc_score_pairs = similarity_docs_retrieval(query, documents)
-    print('doc_score_pairs: ', doc_score_pairs)
