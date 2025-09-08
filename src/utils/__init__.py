@@ -1,3 +1,3 @@
-from .device_selector import get_device, print_device_info
+from .str_generator import dict_to_str
 
-__all__ = ['get_device', 'print_device_info']
+__all__ = ['dict_to_str']

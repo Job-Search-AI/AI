@@ -1,6 +1,4 @@
-*.ipynb
-*.txt
 *.pyc
 .env
-
-debugging/
+cache/
+__pycache__/

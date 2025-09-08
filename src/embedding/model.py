@@ -1,49 +1,65 @@
-from sentence_transformers import SentenceTransformer
-from ..utils import get_device, print_device_info
+import torch
+import os
+import sys
+# python -m src.embedding.model
 
-def similarity_docs_retrieval(query, documents, device_preference="auto"):
+# 이 파일을 단독으로 실행시킬시 아래의 두 주석을 풀고 실행시켜야 캐쉬저장된다.
+# cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
+# os.environ['HF_HOME'] = cache_dir
+
+from sentence_transformers import SentenceTransformer
+from src.utils import dict_to_str
+
+def similarity_docs_retrieval(query, documents):
     """
     문서 유사도 검색 함수
     
     Args:
         query (str): 검색 쿼리
-        documents (list): 검색할 문서 리스트
-        device_preference (str): "auto", "cuda", "mps", "cpu" 중 선택
+        documents (list:str or list:dict): 검색할 문서 리스트 (문자열 리스트 또는 딕셔너리 리스트)
         
     Returns:
         list: 문서와 유사도 점수 쌍의 리스트
     """
+
+    print('-'*10, '유사도 검색 시작', '-'*10)
     # device 선택
-    device = get_device(device_preference)
-    print_device_info(device)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print('device: ', device)
+
     
     # 모델 로드
+    print('모델 로드 시작')
     model_name = 'dragonkue/snowflake-arctic-embed-l-v2.0-ko'
     
-    # device에 따른 설정
-    if device == "cuda":
-        model = SentenceTransformer(model_name, device=device)
-    elif device == "mps":
-        # MPS의 경우 CPU로 로드 후 MPS로 이동
-        model = SentenceTransformer(model_name, device="cpu")
-        model = model.to(device)
-    else:
-        model = SentenceTransformer(model_name, device="cpu")
+    model = SentenceTransformer(model_name).to(device)
+    print('모델 로드 완료')
+
+    print('documents를 문자열로 변환 시작')
+    documents_for_embedding = dict_to_str(documents)
+    print('documents를 문자열로 변환 완료')
 
     # 임베딩 계산
+    print('임베딩 계산 시작')
     query_embeddings = model.encode(query, prompt_name="query")
-    document_embeddings = model.encode(documents)
+    document_embeddings = model.encode(documents_for_embedding)
+    print('임베딩 계산 완료')
 
     # 코사인 유사도 점수 계산
+    print('코사인 유사도 점수 계산 시작')
     scores = model.similarity(query_embeddings, document_embeddings)
-    
+    print('코사인 유사도 점수 계산 완료')
+
     # 문서와 유사도 점수 쌍 생성 및 정렬
-    doc_score_pairs = list(zip(documents, scores[0]))
+    print('문서와 유사도 점수 쌍 생성 및 정렬 시작')
+    doc_score_pairs = list(zip(documents_for_embedding, scores[0]))
     doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
-    
-    print("Query:", query)
+    print('문서와 유사도 점수 쌍 생성 및 정렬 완료')
+
+    print('문서와 유사도 점수 쌍 출력 시작')
     for document, score in doc_score_pairs:
         print(f"{score:.4f}: {document[:100]}...")
+    print('문서와 유사도 점수 쌍 출력 완료')
 
     return doc_score_pairs
 
@@ -79,11 +95,4 @@ if __name__ == '__main__':
         """,
     ]
 
-    print("=== Device 선택 예시 ===")
-    print("1. 자동 선택 (권장)")
-    doc_score_pairs = similarity_docs_retrieval(query, documents, "auto")
-    print('doc_score_pairs: ', doc_score_pairs)
-    
-    print("\n2. CPU 강제 사용")
-    doc_score_pairs = similarity_docs_retrieval(query, documents, "cpu")
-    print('doc_score_pairs: ', doc_score_pairs)
+    doc_score_pairs = similarity_docs_retrieval(query, documents)

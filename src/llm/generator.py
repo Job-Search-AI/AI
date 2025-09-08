@@ -1,54 +1,66 @@
-from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
-import torch
-from ..utils import get_device, print_device_info
+import os
+import sys
 
-def generate_response(user_prompt, documents, device_preference="auto"):
+# 단독으로 이 파일을 실행시, 아래 두 주석을 풀어야 모델이 캐쉬에 저장된다.
+# 아래 두 주석은 transformers 라이브러리 import 보다 위에 존재해야한다.
+# cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
+# os.environ['HF_HOME'] = cache_dir
+
+import torch
+from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
+
+def generate_response(user_prompt, documents):
     """
     LLM을 사용하여 응답을 생성하는 함수
     
     Args:
         user_prompt (str): 사용자 프롬프트
-        documents (str): 분석할 문서
-        device_preference (str): "auto", "cuda", "mps", "cpu" 중 선택
-        
+        documents (list: [dict, dict, ...]): 분석할 문서
+    
+    Examples:
+        user_prompt = "모집된 공고 축약해줘."
+        documents = [
+            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
+            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
+        ]
+    
     Returns:
         str: 생성된 응답
     """
     # device 선택
-    device = get_device(device_preference)
-    print_device_info(device)
+    device = "cuda"
     
     # 모델, 토크나이저 로드
     model_name = "skt/A.X-4.0-Light"
 
-    # device에 따른 설정 조정
-    if device == "cuda":
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_storage=torch.bfloat16,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            quantization_config=bnb_config,
-            torch_dtype=torch.bfloat16,
-            device_map="auto"
-        )
-    else:
-        # CPU나 MPS의 경우 4bit 양자화 없이 로드
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            torch_dtype=torch.float32 if device == "cpu" else torch.float16,
-            device_map="auto"
-        )
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_storage=torch.bfloat16,
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        quantization_config=bnb_config,
+        dtype=torch.bfloat16,
+        device_map="auto"
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+    # docs 문자열로 변환 
+    str_documents = ''
+    
+    for i, doc_obj in enumerate(documents):
+        str_documents += f'[{i}] \n '
+        for key, value in doc_obj.items():
+            str_documents += f'{key}: {value} | '
+        str_documents += '\n'
+
     # instruct와 user 메시지 생성
     chat = [
-        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + documents},
+        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + str_documents},
         {"role": "user", "content": user_prompt}
     ]
 
@@ -61,9 +73,7 @@ def generate_response(user_prompt, documents, device_preference="auto"):
                 return_tensors="pt"
             )
     
-    # device에 맞게 입력 이동
-    if device != "auto":
-        inputs = inputs.to(device)
+    inputs = inputs.to(device)
 
     output_ids = model.generate(
         **inputs,
@@ -85,14 +95,8 @@ if __name__ == "__main__":
     user_prompt = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."
     documents = "취업 공고 정보: 취업 공고 정보는 취업 공고 정보입니다."
     
-    # device 선택 예시
-    print("=== Device 선택 예시 ===")
-    print("1. 자동 선택 (권장)")
-    response = generate_response(user_prompt, documents, "auto")
+    # python -m src.llm.generator
+    response = generate_response(user_prompt, documents)
     print(f"응답: {response}")
     
-    print("\n2. CPU 강제 사용")
-    response = generate_response(user_prompt, documents, "cpu")
-    print(f"응답: {response}")
-
 
