@@ -1,7 +1,10 @@
 print("=== Job Search AI 시스템 시작 ===")
+# pip install -q selenium ipywidgets bitsandbytes
 
 import sys
 import os
+
+os.system("pip install -q selenium ipywidgets bitsandbytes")
 
 # 가장 먼저 HF_HOME을 설정해야 모델, 토크나이저를 원하는 캐쉬 디렉토리에서 불러올수있다.
 cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
@@ -9,7 +12,13 @@ project_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/'
 sys.path.append(project_dir)
 os.environ['HF_HOME'] = cache_dir
 
-from src import extract_job_major_info, print_job_summary, crawl_job_html_from_saramin, similarity_docs_retrieval, generate_response
+from src import (
+    extract_job_major_info,
+    print_job_summary,
+    crawl_job_html_from_saramin,
+    similarity_docs_retrieval,
+    generate_response
+)
 
 print("모든 함수들이 성공적으로 import되었습니다!")
 
@@ -36,11 +45,10 @@ job_data = extract_job_major_info(html_content)
 print_job_summary(job_data)
 
 # 사용자 질문
-user_query = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."
+user_query = "파이썬 장고를 개발자 채용공고만 알려줘"
 
 # 임베딩 리트리버
 doc_score_pairs = similarity_docs_retrieval(user_query, job_data)
-print('doc_score_pairs: ', doc_score_pairs)
 
 # LLM 사용자 질문 응답
 response = generate_response(user_query, job_data)
