@@ -79,6 +79,8 @@ def crawl_job_html_from_saramin(user_info):
                 # 상세 페이지 접속 및 내용 수집
                 index = 0
                 for item in detail_items:
+                    if index >= 1:
+                        return details_html_parts
                     href = item.get('href')
                     list_title = item.get('list_title', "")
                     index = index + 1
@@ -113,8 +115,67 @@ def crawl_job_html_from_saramin(user_info):
                                 is_match = False
 
                             if is_match:
+                                # 첫 섹션 컨텍스트에서 필요한 요소만 선별 추출
                                 first_section = driver.find_element(By.CSS_SELECTOR, ".wrap_jview > section:first-of-type")
-                                details_html_parts.append(first_section.get_attribute('outerHTML'))
+
+                                # 1) 공고 제목 (first_section 내부 한정)
+                                title_outer_html = ""
+                                try:
+                                    title_el = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont h1.tit_job")
+                                    title_outer_html = title_el.get_attribute('outerHTML')
+                                except Exception as e_title:
+                                    print(f"제목 요소 추출 실패: {e_title}")
+
+                                # 2) 요약 영역 (경력, 학력, 근무형태, 급여, 근무지역) - first_section 내부 한정
+                                summary_outer_html = ""
+                                try:
+                                    summary_el = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont div.jv_cont.jv_summary")
+                                    summary_outer_html = summary_el.get_attribute('outerHTML')
+                                except Exception as e_summary:
+                                    print(f"요약 요소 추출 실패: {e_summary}")
+
+                                # 3) 상세 영역 (iframe이 있을 수도 있고 없을 수도 있음) - first_section 내부 한정
+                                detail_inner_html = ""
+                                try:
+                                    detail_container = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont .jv_cont.jv_detail")
+                                except Exception:
+                                    try:
+                                        # first_section 하위 상대 선택자로 재시도 (일부 페이지에서 루트 포함 셀렉터가 실패할 수 있음)
+                                        detail_container = first_section.find_element(By.CSS_SELECTOR, ".jv_cont.jv_detail")
+                                    except Exception as e_detail_container:
+                                        print(f"상세 컨테이너 탐색 실패: {e_detail_container}")
+                                        detail_container = None
+
+                                if detail_container is not None:
+                                    try:
+                                        iframe_elements = detail_container.find_elements(By.TAG_NAME, "iframe")
+                                        if iframe_elements:
+                                            iframe_el = iframe_elements[0]
+                                            try:
+                                                driver.switch_to.frame(iframe_el)
+                                                time.sleep(1)
+                                                detail_inner_text = driver.find_element(By.TAG_NAME, "body").text
+
+                                            finally:
+                                                driver.switch_to.default_content()
+                                        else:
+                                            # iframe이 없으면 내부 요소 전체 추출
+                                            detail_inner_text = detail_container.text
+
+                                    except Exception as e_detail:
+                                        print(f"상세 내용 추출 실패: {e_detail}")
+
+                                # 원하는 요소들만 결합하여 반환
+                                combined_html = "".join([
+                                    title_outer_html or "", 
+                                    "\n",
+                                    summary_outer_html or "",
+                                    "\n",
+                                    f'<div class="detail">{detail_inner_text}</div>'
+                                ])
+
+                                details_html_parts.append(combined_html)
+                                return details_html_parts
                             else:
                                 print("제목 불일치로 스킵:")
                                 print(f"  목록 제목: {list_title}")
