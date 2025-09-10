@@ -9,6 +9,7 @@ import sys
 
 from sentence_transformers import SentenceTransformer
 from src.utils import dict_to_str
+from src.utils.device_selector import get_device, print_device_info
 
 def similarity_docs_retrieval(query, documents):
     """
@@ -24,10 +25,9 @@ def similarity_docs_retrieval(query, documents):
 
     print('-'*10, '유사도 검색 시작', '-'*10)
     # device 선택
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print('device: ', device)
+    device = get_device()
+    print_device_info(device)
 
-    
     # 모델 로드
     print('모델 로드 시작')
     model_name = 'dragonkue/snowflake-arctic-embed-l-v2.0-ko'
