@@ -1,20 +1,27 @@
-def parse_benefit(soup):
+def parse_benefit_text(soup):
     """
     soup = BeautifulSoup(사람인 채용 정보 html, 'html.parser')
+
+    return : str : 복리후생 정보 (읽기 편하게 포맷팅)
     """
     benefit_div = soup.find("div", class_="jv_cont jv_benefit")
     if not benefit_div:
-        return {}
-        
-    benefits = {}
+        return ""
 
-    # jv_title을 키로 사용
-    title = benefit_div.find("h2", class_="jv_title").get_text(strip=True)
+    lines = []
 
-    # 모든 dt-dd 쌍을 찾아서 딕셔너리에 추가
-    for dt, dd in zip(benefit_div.find_all("dt"), benefit_div.find_all("dd")):
+    # 제목
+    title_tag = benefit_div.find("h2", class_="jv_title")
+    title = title_tag.get_text(strip=True) if title_tag else "복리후생 정보"
+    lines.append(title)
+    lines.append("-" * len(title))  # 제목 아래 구분선
+
+    # dt-dd 쌍
+    dts = benefit_div.find_all("dt")
+    dds = benefit_div.find_all("dd")
+    for dt, dd in zip(dts, dds):
         key = dt.get_text(strip=True)
         value = dd.get_text(strip=True)
-        benefits[key] = value
+        lines.append(f"{key}: {value}")
 
-    return {title: benefits}
+    return "\n".join(lines)
