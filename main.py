@@ -13,11 +13,10 @@ sys.path.append(project_dir)
 os.environ['HF_HOME'] = cache_dir
 
 from src import (
-    extract_job_major_info,
-    print_job_summary,
     crawl_job_html_from_saramin,
     similarity_docs_retrieval,
-    generate_response
+    generate_response,
+    parsing_job_info
 )
 
 print("모든 함수들이 성공적으로 import되었습니다!")
