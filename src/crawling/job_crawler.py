@@ -238,7 +238,7 @@ def crawl_job_html_from_saramin(user_info, max_count=None):
                                     "\n",
                                     benefit_el_html,
                                     "\n",
-                                    location_el_text,
+                                    f'<div class="location">{location_el_text}</div>',
                                     "\n",
                                     applicant_el_html
                                 ])
