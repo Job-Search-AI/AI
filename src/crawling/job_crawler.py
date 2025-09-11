@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # 셀레니움을 사용한 HTML 데이터 추출
-def crawl_job_html_from_saramin(user_info):
+def crawl_job_html_from_saramin(user_info, max_count=None):
     # Chrome 옵션 설정
     print("셀레니움 초기화 시작...")
     chrome_options = webdriver.ChromeOptions()
@@ -79,15 +79,21 @@ def crawl_job_html_from_saramin(user_info):
                 # 상세 페이지 접속 및 내용 수집
                 index = 0
                 for item in detail_items:
-                    if index >= 1:
+
+                    # 최대 개수 없을시 건너뛰거나, 최대 개수 초과 시 종료
+                    if max_count is not None and index > max_count - 1:
                         return details_html_parts
                     href = item.get('href')
+
+                    # 목록 제목 추출
                     list_title = item.get('list_title', "")
                     index = index + 1
                     try:
+                        # 상세 페이지 접속
                         print(f"[{index}/{len(detail_items)}] 상세 페이지 접속: {href}")
                         driver.get(href)
                         try:
+                            # 첫 번째 section 로딩 대기
                             time.sleep(3)
                             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".wrap_jview > section:first-of-type")))
                         except:
@@ -95,7 +101,7 @@ def crawl_job_html_from_saramin(user_info):
                             time.sleep(2)
 
                         try:
-                            # 상세 제목 추출 후 목록 제목과 일치 여부 확인
+                            # 상세 제목 추출
                             detail_title_text = ""
                             try:
                                 title_el = driver.find_element(By.CSS_SELECTOR, ".wrap_jview .wrap_jv_cont h1.tit_job")
@@ -103,7 +109,7 @@ def crawl_job_html_from_saramin(user_info):
                             except Exception as e:
                                 print(f"상세 제목 추출 실패: {e}")
 
-                            # 일치 여부 판단 (공백 정규화 최소화)
+                            # 목록 제목과 일치 여부 판단 (공백 정규화 최소화)
                             is_match = False
                             try:
                                 list_title_norm = " ".join(list_title.split())
@@ -115,67 +121,130 @@ def crawl_job_html_from_saramin(user_info):
                                 is_match = False
 
                             if is_match:
-                                # 첫 섹션 컨텍스트에서 필요한 요소만 선별 추출
-                                first_section = driver.find_element(By.CSS_SELECTOR, ".wrap_jview > section:first-of-type")
+                                # 첫 섹션 컨텍스트에서 원하는 요소들만 결합하여 반환
+                                first_section = driver.find_element(By.CSS_SELECTOR, ".wrap_jview > section:first-of-type > div.wrap_jv_cont")
 
-                                # 1) 공고 제목 (first_section 내부 한정)
+                                # 1) 공고 제목
                                 title_outer_html = ""
                                 try:
-                                    title_el = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont h1.tit_job")
+                                    title_el = first_section.find_element(By.CSS_SELECTOR, "h1.tit_job")
                                     title_outer_html = title_el.get_attribute('outerHTML')
+                                    print("제목 요소 추출 완료")
                                 except Exception as e_title:
                                     print(f"제목 요소 추출 실패: {e_title}")
 
-                                # 2) 요약 영역 (경력, 학력, 근무형태, 급여, 근무지역) - first_section 내부 한정
+                                # 2) 요약 영역 (경력, 학력, 근무형태, 급여, 근무지역)
                                 summary_outer_html = ""
                                 try:
-                                    summary_el = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont div.jv_cont.jv_summary")
+                                    summary_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_summary")
                                     summary_outer_html = summary_el.get_attribute('outerHTML')
+                                    print("요약 요소 추출 완료")
                                 except Exception as e_summary:
                                     print(f"요약 요소 추출 실패: {e_summary}")
 
-                                # 3) 상세 영역 (iframe이 있을 수도 있고 없을 수도 있음) - first_section 내부 한정
-                                detail_inner_html = ""
+                                # 3) 상세 영역 (iframe이 있을 수도 있고 없을 수도 있음)
                                 try:
-                                    detail_container = first_section.find_element(By.CSS_SELECTOR, ".wrap_jv_cont .jv_cont.jv_detail")
-                                except Exception:
-                                    try:
-                                        # first_section 하위 상대 선택자로 재시도 (일부 페이지에서 루트 포함 셀렉터가 실패할 수 있음)
-                                        detail_container = first_section.find_element(By.CSS_SELECTOR, ".jv_cont.jv_detail")
-                                    except Exception as e_detail_container:
-                                        print(f"상세 컨테이너 탐색 실패: {e_detail_container}")
-                                        detail_container = None
+                                    detail_container = first_section.find_element(By.CSS_SELECTOR, ".jv_cont.jv_detail")
+                                except Exception as e_detail_container:
+                                    print(f"상세 컨테이너 탐색 실패: {e_detail_container}")
+                                    detail_container = None
 
                                 if detail_container is not None:
                                     try:
                                         iframe_elements = detail_container.find_elements(By.TAG_NAME, "iframe")
+                                        # iframe이 있으면 첫 번째 iframe 추출
                                         if iframe_elements:
                                             iframe_el = iframe_elements[0]
                                             try:
                                                 driver.switch_to.frame(iframe_el)
                                                 time.sleep(1)
                                                 detail_inner_text = driver.find_element(By.TAG_NAME, "body").text
-
+                                                print("상세 내용 추출 완료")
                                             finally:
                                                 driver.switch_to.default_content()
                                         else:
                                             # iframe이 없으면 내부 요소 전체 추출
                                             detail_inner_text = detail_container.text
-
+                                            print("상세 내용 추출 완료")
                                     except Exception as e_detail:
                                         print(f"상세 내용 추출 실패: {e_detail}")
+                                
+                                # 4) 접수기간 및 방법
+                                how_el_html = ""
+                                try:
+                                    how_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_howto")
+                                    how_el_html = how_el.get_attribute('outerHTML')
+                                    print("접수기간 및 방법 추출 완료")
+                                except Exception as e_how:
+                                    print(f"접수기간 및 방법 추출 실패: {e_how}")
+
+                                # 5) 기업정보
+                                corp_el_html = ""
+                                try:
+                                    corp_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_company")
+                                    corp_el_html = corp_el.get_attribute('outerHTML')
+                                    print("기업정보 추출 완료")
+                                except Exception as e_corp:
+                                    print(f"기업정보 추출 실패: {e_corp}")
+                                
+                                # 6) 복리후생
+                                benefit_el_html = ""    
+                                # 복리후생 버튼 클릭
+                                try:
+                                    button = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_benefit button.btn_more_cont")
+                                    button.click()
+                                    time.sleep(1)  # 클릭 후 DOM 업데이트 대기 (필요 없으면 제거 가능)
+                                except Exception as e_benefit_button:
+                                    print(f"복리후생 버튼 클릭 실패: {e_benefit_button}")
+
+                                # 복리후생 내용 추출
+                                try:
+                                    benefit_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_benefit")
+                                    benefit_el_html = benefit_el.get_attribute('outerHTML')
+                                    print("복리후생 내용 추출 완료")
+                                except Exception as e_benefit_content:
+                                    print(f"복리후생 내용 추출 실패: {e_benefit_content}")
+
+
+                                # 7) 근무지 위치
+                                location_el_text = ""
+                                try:
+                                    location_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_location")
+                                    location_el_text = location_el.text.strip()
+                                    print("근무지 위치 추출 완료")
+                                except Exception as e_location:
+                                    print(f"근무지 위치 추출 실패: {e_location}")
+                                
+                                # 8) 지원자 통계
+                                applicant_el_html = ""
+                                try:
+                                    applicant_el = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_statics")
+                                    applicant_el_html = applicant_el.get_attribute('outerHTML')
+                                    print("지원자 통계 추출 완료")
+                                except Exception as e_applicant:
+                                    print(f"지원자 통계 추출 실패: {e_applicant}")
 
                                 # 원하는 요소들만 결합하여 반환
                                 combined_html = "".join([
-                                    title_outer_html or "", 
+                                    title_outer_html, 
                                     "\n",
-                                    summary_outer_html or "",
+                                    summary_outer_html,
                                     "\n",
-                                    f'<div class="detail">{detail_inner_text}</div>'
+                                    f'<div class="detail">{detail_inner_text}</div>',
+                                    "\n",
+                                    how_el_html,
+                                    "\n",
+                                    corp_el_html,
+                                    "\n",
+                                    benefit_el_html,
+                                    "\n",
+                                    location_el_text,
+                                    "\n",
+                                    applicant_el_html
                                 ])
 
                                 details_html_parts.append(combined_html)
-                                return details_html_parts
+                                print(f"공고 {index} 수집 완료")
                             else:
                                 print("제목 불일치로 스킵:")
                                 print(f"  목록 제목: {list_title}")
@@ -214,17 +283,22 @@ if __name__ == "__main__":
 
     # 프론트엔드에서 받은 정보
     user_info = {
-        "cat_kewd": "84", # 직무 코드
-        "keydownAccess": "", # 검색 키워드
+        "searchType": "search", # 검색 타입
+        "searchword": "AI+%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4", # 검색 키워드 (AI 엔지니어)
         "loc_mcd": "101000", # 지역 코드
-        "exp_cd": "1", # 경력 코드
-        "exp_none": "y", # 경력 무관
-        "edu_none": "y", # 학력 무관
         "edu_min": "6", # 학력 최소
         "edu_max": "9", # 학력 최대
+        "edu_none": "y", # 학력 무관
+        "company_cd": "0%2C1%2C2%2C3%2C4%2C5%2C6%2C7%2C9%2C10", # 기업 규모 코드
+        "exp_cd": "1", # 경력 코드
+        "exp_none": "y", # 경력 무관
+        "panel_type": "", # 패널 타입
+        "search_optional_item": "y", # 선택 검색 항목
         "search_done": "y", # 검색 완료
+        "panel_count": "y", # 패널 카운트
+        "preview": "y", # 미리보기
     }
 
     # 사람인 채용 정보 html 추출
-    html_content = crawl_job_html_from_saramin(user_info)
+    html_content = crawl_job_html_from_saramin(user_info, 3)
     print(html_content)
