@@ -20,7 +20,9 @@ def similarity_docs_retrieval(query, documents):
         documents (list:str or list:dict): 검색할 문서 리스트 (문자열 리스트 또는 딕셔너리 리스트)
         
     Returns:
-        list: 문서와 유사도 점수 쌍의 리스트
+        res_documents: 유사도 검색된 문서 리스트
+        res_scores: 유사도 검색된 문서의 유사도 점수 리스트
+
     """
 
     print('-'*10, '유사도 검색 시작', '-'*10)
@@ -56,12 +58,16 @@ def similarity_docs_retrieval(query, documents):
     doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
     print('문서와 유사도 점수 쌍 생성 및 정렬 완료')
 
+    res_documents = []
+    res_scores = []
     print('문서와 유사도 점수 쌍 출력 시작')
     for document, score in doc_score_pairs:
+        res_documents.append(document)
+        res_scores.append(score)
         print(f"{score:.4f}: {document[:100]}...")
     print('문서와 유사도 점수 쌍 출력 완료')
 
-    return doc_score_pairs
+    return res_documents, res_scores
 
 if __name__ == '__main__':
     query = "웹 개발자 신입 채용"
