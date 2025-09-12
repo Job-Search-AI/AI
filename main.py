@@ -8,8 +8,6 @@ os.system("pip install -q selenium ipywidgets bitsandbytes")
 
 # 가장 먼저 HF_HOME을 설정해야 모델, 토크나이저를 원하는 캐쉬 디렉토리에서 불러올수있다.
 cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
-project_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/'
-sys.path.append(project_dir)
 os.environ['HF_HOME'] = cache_dir
 
 from src import (
@@ -18,38 +16,23 @@ from src import (
     generate_response,
     parsing_job_info
 )
+from config import USER_INFO
 
 print("모든 함수들이 성공적으로 import되었습니다!")
 
-# 더미 데이터 생성
-user_info = {
-        "cat_kewd": "84", # 직무 코드
-        "keydownAccess": "", # 검색 키워드
-        "loc_mcd": "101000", # 지역 코드
-        "exp_cd": "1", # 경력 코드
-        "exp_none": "y", # 경력 무관
-        "edu_none": "y", # 학력 무관
-        "edu_min": "6", # 학력 최소
-        "edu_max": "9", # 학력 최대
-        "search_done": "y", # 검색 완료
-    }
-
 # 사람인 채용 정보 html 추출
-html_content = crawl_job_html_from_saramin(user_info)
+html_content = crawl_job_html_from_saramin(USER_INFO, 3)
 
 # #content > div.recruit_list_renew > div 영역 내의 채용 정보 추출
-job_data = extract_job_major_info(html_content)
-
-# 채용 정보 요약 출력
-print_job_summary(job_data)
+documents = parsing_job_info(html_content)
 
 # 사용자 질문
-user_query = "파이썬 장고를 개발자 채용공고만 알려줘"
+query = "신입, 학력무관, 고졸이상 공고중에서 AI 엔지니어 공고들만 보여줘."
 
 # 임베딩 리트리버
-doc_score_pairs = similarity_docs_retrieval(user_query, job_data)
+retrieved_documents, retrieved_scores = similarity_docs_retrieval(query, documents)
 
 # LLM 사용자 질문 응답
-response = generate_response(user_query, job_data)
+response = generate_response(query, retrieved_documents)
 print(f"LLM 응답: {response}")
 
