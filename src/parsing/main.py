@@ -7,6 +7,7 @@ from src.parsing.benefit import parse_benefit_text
 from src.parsing.location import parse_location_text
 from src.parsing.howto import parse_howto_text
 from src.parsing.applicant_stats import parse_applicant_stats_text
+from src.parsing.title import parse_title_text
 
 from src.crawling.job_crawler import crawl_job_html_from_saramin
 from config import USER_INFO
@@ -24,12 +25,16 @@ def parsing_job_info(html_contents):
 
         # 각 파트 결과를 리스트에 담기
         parts = [
-            parse_company_info_text(soup),
+            "*" * 10,
+            parse_title_text(soup),
             parse_summary_text(soup),
             parse_benefit_text(soup),
             parse_location_text(soup),
+            parse_job_detail_text(soup),
             parse_howto_text(soup),
-            parse_applicant_stats_text(soup)
+            parse_applicant_stats_text(soup),
+            parse_company_info_text(soup),
+            "*" * 10,
         ]
 
         # 빈 줄 2개 정도로 구분하여 합치기

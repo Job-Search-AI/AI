@@ -9,12 +9,8 @@ def parse_applicant_stats_text(soup):
         return ""
 
     lines = []
-
-    # 제목
-    title_tag = stats_section.select_one("h2.jv_title")
-    title = title_tag.get_text(strip=True) if title_tag else "지원자 통계"
-    lines.append(title)
-    lines.append("-" * len(title))  # 제목 아래 구분선
+    lines.append("-" * 10)  
+    lines.append("지원자 통계:")
 
     # 전체 지원자 수
     total_dl = stats_section.select_one("dl.total")
@@ -32,8 +28,7 @@ def parse_applicant_stats_text(soup):
         if not chart_title_tag:
             continue
         chart_key = chart_title_tag.get_text(strip=True)
-        lines.append(chart_key)
-        lines.append("-" * len(chart_key))
+        lines.append(chart_key + ":")
 
         chart_data_lines = []
 
@@ -57,5 +52,6 @@ def parse_applicant_stats_text(soup):
         if chart_data_lines:
             lines.extend(chart_data_lines)
             lines.append("")  # 차트별 구분용 빈 줄
-
+            
+    lines.append("-" * 10)  
     return "\n".join(lines)

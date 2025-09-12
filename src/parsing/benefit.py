@@ -9,12 +9,8 @@ def parse_benefit_text(soup):
         return ""
 
     lines = []
-
-    # 제목
-    title_tag = benefit_div.find("h2", class_="jv_title")
-    title = title_tag.get_text(strip=True) if title_tag else "복리후생 정보"
-    lines.append(title)
-    lines.append("-" * len(title))  # 제목 아래 구분선
+    lines.append("-" * 10)  
+    lines.append("복리후생:")
 
     # dt-dd 쌍
     dts = benefit_div.find_all("dt")
@@ -23,5 +19,7 @@ def parse_benefit_text(soup):
         key = dt.get_text(strip=True)
         value = dd.get_text(strip=True)
         lines.append(f"{key}: {value}")
+    
+    lines.append("-" * 10)
 
     return "\n".join(lines)

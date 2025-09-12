@@ -4,9 +4,17 @@ def parse_location_text(soup):
 
     return : str : 근무지 위치
     """
-    if not soup.select_one("div.location"):
+    location_div = soup.find("div", class_="jv_location")
+    if not location_div:
         return ""
     
-    location = soup.select_one("div.location").get_text(strip=True)
+    lines = []
+    lines.append("-" * 10)
+    lines.append("근무지 위치:")
     
-    return "근무지 위치 : " + location  
+    location = location_div.get_text(strip=True)
+    
+    lines.append(location)
+    lines.append("-" * 10)
+    
+    return "\n".join(lines)  

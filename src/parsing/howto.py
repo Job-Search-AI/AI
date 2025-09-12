@@ -9,13 +9,9 @@ def parse_howto_text(soup):
         return ""
 
     lines = []
-
-    # 제목
-    title_tag = how_to_el.select_one("h2.jv_title")
-    title = title_tag.get_text(strip=True) if title_tag else "지원 방법 정보"
-    lines.append(title)
-    lines.append("-" * len(title))  # 제목 아래 구분선
-
+    lines.append("-" * 10)
+    lines.append("지원 방법 정보:")
+    
     # 남은 기간
     timer = how_to_el.select_one(".info_timer")
     if timer:
@@ -45,4 +41,5 @@ def parse_howto_text(soup):
                 lines.append(f"{key}: {dd.get_text(strip=True)}")
         lines.append("")
 
+    lines.append("-" * 10)
     return "\n".join(lines)

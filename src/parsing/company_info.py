@@ -9,12 +9,8 @@ def parse_company_info_text(soup):
         return ""
 
     lines = []
-
-    # 제목
-    title_tag = company_section.select_one("h2.jv_title_heading")
-    title = title_tag.get_text(strip=True) if title_tag else "회사 정보"
-    lines.append(title)
-    lines.append("-" * len(title))  # 제목 아래 구분선
+    lines.append("-" * 10)  
+    lines.append("회사 정보:")
 
     # 회사명
     company_name_tag = company_section.select_one(".basic_info h3")
@@ -30,4 +26,5 @@ def parse_company_info_text(soup):
             value = dd_tag.get_text(strip=True)
             lines.append(f"{key}: {value}")
 
+    lines.append("-" * 10)
     return "\n".join(lines)
