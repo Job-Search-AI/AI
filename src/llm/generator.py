@@ -15,13 +15,21 @@ def generate_response(user_prompt, documents):
     
     Args:
         user_prompt (str): 사용자 프롬프트
-        documents (list: [dict, dict, ...]): 분석할 문서
+        documents (list: [str, str, ...]): 분석할 문서
     
     Examples:
         user_prompt = "모집된 공고 축약해줘."
         documents = [
-            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
-            {"회사명": "사이트", "채용제목": "채용제목", "직무분야": "직무분야"},
+            "\n\n".join([
+                "*" * 10,
+                "회사명: 사이트 | 채용제목: 채용제목 | 직무분야: 직무분야",
+                "*" * 10,
+            ]),
+            "\n\n".join([
+                "*" * 10,
+                "회사명: 사이트 | 채용제목: 채용제목 | 직무분야: 직무분야",
+                "*" * 10,
+            ]),
         ]
     
     Returns:
@@ -49,18 +57,12 @@ def generate_response(user_prompt, documents):
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # docs 문자열로 변환 
-    str_documents = ''
-    
-    for i, doc_obj in enumerate(documents):
-        str_documents += f'[{i}] \n '
-        for key, value in doc_obj.items():
-            str_documents += f'{key}: {value} | '
-        str_documents += '\n'
-
     # instruct와 user 메시지 생성
+
+    documents = "\n\n".join(documents)
+
     chat = [
-        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + str_documents},
+        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + documents},
         {"role": "user", "content": user_prompt}
     ]
 
