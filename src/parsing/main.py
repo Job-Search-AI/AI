@@ -10,7 +10,7 @@ from src.parsing.applicant_stats import parse_applicant_stats_text
 from src.parsing.title import parse_title_text
 
 from src.crawling.job_crawler import crawl_job_html_from_saramin
-from config import USER_INFO
+from config import EVAL_URL
 
 def parsing_job_info(html_contents):
     """
@@ -45,6 +45,6 @@ def parsing_job_info(html_contents):
 
 
 if __name__ == "__main__":
-    html_contents = crawl_job_html_from_saramin(USER_INFO, 3)
+    html_contents = crawl_job_html_from_saramin(EVAL_URL, 3)
     job_info = parsing_job_info(html_contents)
     print(job_info)
