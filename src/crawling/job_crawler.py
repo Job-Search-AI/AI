@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # 셀레니움을 사용한 HTML 데이터 추출
-def crawl_job_html_from_saramin(url, user_info, max_count=None):
+def crawl_job_html_from_saramin(url, max_count=None):
     """
     url: 사용자 조건을 적용한 url
     """
