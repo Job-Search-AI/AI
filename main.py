@@ -6,10 +6,6 @@ import os
 
 os.system("pip install -q selenium ipywidgets bitsandbytes")
 
-# 가장 먼저 HF_HOME을 설정해야 모델, 토크나이저를 원하는 캐쉬 디렉토리에서 불러올수있다.
-cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
-os.environ['HF_HOME'] = cache_dir
-
 from src import (
     crawl_job_html_from_saramin,
     similarity_docs_retrieval,
