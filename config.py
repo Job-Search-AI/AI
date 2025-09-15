@@ -1,19 +1,4 @@
-USER_INFO = {
-    "searchType": "search", # 검색 타입
-    "searchword": "AI+%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4", # 검색 키워드 (AI 엔지니어)
-    "loc_mcd": "101000", # 지역 코드
-    "edu_min": "6", # 학력 최소
-    "edu_max": "9", # 학력 최대
-    "edu_none": "y", # 학력 무관
-    "company_cd": "0%2C1%2C2%2C3%2C4%2C5%2C6%2C7%2C9%2C10", # 기업 규모 코드
-    "exp_cd": "1", # 경력 코드
-    "exp_none": "y", # 경력 무관
-    "panel_type": "", # 패널 타입
-    "search_optional_item": "y", # 선택 검색 항목
-    "search_done": "y", # 검색 완료
-    "panel_count": "y", # 패널 카운트
-    "preview": "y", # 미리보기
-}
+EVAL_URL = "https://www.saramin.co.kr/zf_user/search?loc_mcd=101000&cat_kewd=108%2C109&exp_cd=1&exp_none=y&edu_min=6&edu_max=9&edu_none=y&panel_type=&search_optional_item=y&search_done=y&panel_count=y&preview=y"
 
 PROMPT = """
 
@@ -37,7 +22,7 @@ PROMPT = """
 - 추출된 조건은 반드시 쿼리필드맵에 존재하는 key와 value로 변환해야 한다. 매핑되지 않은 값은 단순히 무시하지 않고, 현재 개발단계에서 코드가 준비되지 않은 값임을 사용자에게 알려주고 별도의 확인을 요청한다.
 - 조건은 `key=value` 형식으로 표현하며, 여러 조건이 존재할 경우 `&`로 연결한다.
 - **모든 필수 조건이 완전히 확보된 경우에만** 다음 기본 URL에 변환된 쿼리 문자열을 붙여 반환한다:
-  `https://www.saramin.co.kr/zf_user/jobs/list/domestic?`
+  `https://www.saramin.co.kr/zf_user/search?`
 - 마크다운 형식(```plaintext 등)을 사용하지 말고 일반 텍스트로만 응답한다.
 - 응답은 항상 완성된 url 또는 부족한 정보를 알려주는 텍스트로만 구성한다.
 - 부족한 정보에서 사용자가 이해할 수 있는 지역, 직무, 경력, 학력 정보중 부족한것을 알려준다. 사용자는 url 쿼리로 변환되는지 모르므로, url 쿼리가 없다고 말하거나 지역코드가 없다고 말하면 안된다. 예시(지역: loc_mcd=101000, cat_kewd=109 이런 정보가 나오면 절대 안된다.)
@@ -62,7 +47,7 @@ Output: 직무와 학력 세부사항을 알려주세요. ("대졸"이 2~3년제
 
 Example 4:
 Input: "서울 머신러닝 신입 4년제대학교졸업"
-Output: https://www.saramin.co.kr/zf_user/jobs/list/domestic?loc_mcd=101000&cat_kewd=109&exp_cd=1&exp_none=y&edu_min=8&edu_max=11&edu_none=y&job_type=1
+Output: https://www.saramin.co.kr/zf_user/search?loc_mcd=101000&cat_kewd=109&exp_cd=1&exp_none=y&edu_min=8&edu_max=11&edu_none=y&job_type=1
 
 Example 5:
 Input: "제주 신입 ai엔지니어 대졸"
