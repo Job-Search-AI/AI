@@ -8,7 +8,10 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # 셀레니움을 사용한 HTML 데이터 추출
-def crawl_job_html_from_saramin(user_info, max_count=None):
+def crawl_job_html_from_saramin(url, user_info, max_count=None):
+    """
+    url: 사용자 조건을 적용한 url
+    """
     # Chrome 옵션 설정
     print("셀레니움 초기화 시작...")
     chrome_options = webdriver.ChromeOptions()
@@ -26,18 +29,8 @@ def crawl_job_html_from_saramin(user_info, max_count=None):
     details_html_parts = []
 
     try:
-        # URL 구성
-        base_url = "https://www.saramin.co.kr/zf_user/search"
-        params_list = []
-        for key, value in user_info.items():
-            params_list.append(f"{key}={value}")
-        query_params = "&".join(params_list)
-        full_url = f"{base_url}?{query_params}"
-        print("페이지 로드 시작...")
-        print(f"접속 URL: {full_url}")
-        
         # 페이지 로드
-        driver.get(full_url)
+        driver.get(url)
         print("페이지 로드 완료")
         # 페이지가 완전히 로드될 때까지 대기
         wait = WebDriverWait(driver, 10)

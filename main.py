@@ -10,25 +10,33 @@ from src import (
     crawl_job_html_from_saramin,
     similarity_docs_retrieval,
     generate_response,
-    parsing_job_info
+    parsing_job_info,
 )
+from src.url_exchaging.interactive_query import interactive_query_handler
 from config import USER_INFO
 
-print("모든 함수들이 성공적으로 import되었습니다!")
+# 1) 사용자와 대화형으로 URL 생성
+generated_url, final_query = interactive_query_handler()
 
-# 사람인 채용 정보 html 추출
-html_content = crawl_job_html_from_saramin(USER_INFO, 3)
+# 2) 사람인 채용 정보 html 추출
+html_content = crawl_job_html_from_saramin(generated_url, USER_INFO, 3)
 
-# #content > div.recruit_list_renew > div 영역 내의 채용 정보 추출
+# 3) 채용 정보 파싱
 documents = parsing_job_info(html_content)
 
-# 사용자 질문
-query = "신입, 학력무관, 고졸이상 공고중에서 AI 엔지니어 공고들만 보여줘."
+# 4) 임베딩 리트리버
+retrieved_documents, retrieved_scores = similarity_docs_retrieval(final_query, documents)
 
-# 임베딩 리트리버
-retrieved_documents, retrieved_scores = similarity_docs_retrieval(query, documents)
+# 5) LLM 사용자 질문 응답
+response = generate_response(final_query, retrieved_documents)
 
-# LLM 사용자 질문 응답
-response = generate_response(query, retrieved_documents)
-print(f"LLM 응답: {response}")
+html_content = crawl_job_html_from_saramin(generated_url, USER_INFO, 3)
 
+# 3) 채용 정보 파싱
+documents = parsing_job_info(html_content)
+
+# 4) 임베딩 리트리버
+retrieved_documents, retrieved_scores = similarity_docs_retrieval(final_query, documents)
+
+# 5) LLM 사용자 질문 응답
+response = generate_response(final_query, retrieved_documents)
