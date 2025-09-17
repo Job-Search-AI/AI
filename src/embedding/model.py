@@ -12,13 +12,28 @@ from sentence_transformers import SentenceTransformer
 from src.utils import dict_to_str
 from src.utils.device_selector import get_device, print_device_info
 
-def similarity_docs_retrieval(query, documents):
+# 모델 캐시를 위한 전역 변수
+_model_cache = None
+
+def get_model():
+    global _model_cache
+    if _model_cache is None:
+        device = get_device()
+        print_device_info(device)
+        print('모델 로드 시작')
+        model_name = 'dragonkue/snowflake-arctic-embed-l-v2.0-ko'
+        _model_cache = SentenceTransformer(model_name).to(device)
+        print('모델 로드 완료')
+    return _model_cache
+
+def similarity_docs_retrieval(query, documents, precomputed_doc_embeddings=None):
     """
     문서 유사도 검색 함수
     
     Args:
         query (str): 검색 쿼리
         documents (list:str or list:dict): 검색할 문서 리스트 (문자열 리스트 또는 딕셔너리 리스트)
+        precomputed_doc_embeddings (torch.Tensor, optional): 미리 계산된 문서 임베딩
         
     Returns:
         res_documents: 유사도 검색된 문서 리스트
@@ -27,16 +42,8 @@ def similarity_docs_retrieval(query, documents):
     """
 
     print('-'*10, '유사도 검색 시작', '-'*10)
-    # device 선택
-    device = get_device()
-    print_device_info(device)
-
-    # 모델 로드
-    print('모델 로드 시작')
-    model_name = 'dragonkue/snowflake-arctic-embed-l-v2.0-ko'
     
-    model = SentenceTransformer(model_name).to(device)
-    print('모델 로드 완료')
+    model = get_model()
 
     print('documents를 문자열로 변환 시작')
     documents_for_embedding = dict_to_str(documents)
@@ -45,7 +52,12 @@ def similarity_docs_retrieval(query, documents):
     # 임베딩 계산
     print('임베딩 계산 시작')
     query_embeddings = model.encode(query, prompt_name="query")
-    document_embeddings = model.encode(documents_for_embedding, batch_size=8)
+    
+    if precomputed_doc_embeddings is not None:
+        document_embeddings = precomputed_doc_embeddings
+        print('미리 계산된 문서 임베딩 사용')
+    else:
+        document_embeddings = model.encode(documents_for_embedding, batch_size=2)
     print('임베딩 계산 완료')
 
     # 코사인 유사도 점수 계산
