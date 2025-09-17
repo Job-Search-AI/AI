@@ -1,10 +1,11 @@
 import sys
 import json
 import os
+import torch
 
 sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
-from src.embedding.model import similarity_docs_retrieval
+from src.embedding.model import similarity_docs_retrieval, get_model
 from src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
 
 from collections import defaultdict, deque
@@ -45,6 +46,12 @@ def evaluate_retriever_with_real_data():
     # 1) 평가용 데이터 로드 (JSONL)
     job_data = load_jsonl(job_data_file)
     job_data_strings = docs_to_strings(job_data)
+
+    # 모델 로드 및 문서 임베딩 미리 계산
+    print("모델 로드 및 문서 임베딩 계산 시작")
+    model = get_model()
+    document_embeddings = model.encode(job_data_strings, batch_size=2)
+    print("문서 임베딩 계산 완료")
 
     # 중복 문자열도 안전하게 인덱싱할 수 있도록 역색인 구성
     inverted_index: Dict[str, deque] = defaultdict(deque)
@@ -87,7 +94,7 @@ def evaluate_retriever_with_real_data():
         print(f"정답 문서 인덱스: {relevant_indices}")
 
         # 리트리버 검색
-        retrieved_docs, scores = similarity_docs_retrieval(query, job_data_strings)
+        retrieved_docs, scores = similarity_docs_retrieval(query, job_data_strings, precomputed_doc_embeddings=document_embeddings)
 
         # 검색된 문서 -> 인덱스 변환 (중복 안전)
         temp_inv = {k: deque(v) for k, v in inverted_index.items()}  # 쿼리별 독립적인 사용
@@ -122,6 +129,9 @@ def evaluate_retriever_with_real_data():
 
         all_results["per_query"][query] = per_k
         n_queries += 1
+
+        # GPU 메모리 비우기
+        torch.cuda.empty_cache()
 
     # 매크로 평균 계산
     if n_queries > 0:
