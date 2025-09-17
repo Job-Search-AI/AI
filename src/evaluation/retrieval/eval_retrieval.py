@@ -17,11 +17,11 @@ def save_evaluation_data(job_data, relevant_indices, query="NLP ai 엔지니어 
     print("평가용 데이터 저장 시작")
     
     # data/eval 폴더 생성
-    eval_dir = "/content/drive/MyDrive/ai_enginner/job_search/AI/data/eval"
+    eval_dir = "/content/drive/MyDrive/ai_enginner/job_search/AI/data/eval/retrieval"
     os.makedirs(eval_dir, exist_ok=True)
     
     # 전체 40개 데이터 저장
-    job_data_file = os.path.join(eval_dir, "job_data_40.json")
+    job_data_file = os.path.join(eval_dir, "data.json") 
     with open(job_data_file, 'w', encoding='utf-8') as f:
         json.dump(job_data, f, ensure_ascii=False, indent=2)
     print(f"40개 평가용 데이터 저장 완료: {job_data_file}")
@@ -47,10 +47,9 @@ def evaluate_retriever_with_real_data():
     print("실제 데이터로 리트리버 평가 시작")
     
     # 저장된 데이터 로드
-    eval_dir = "/content/drive/MyDrive/ai_enginner/job_search/AI/data/eval"
-    
+    eval_dir = "/content/drive/MyDrive/ai_enginner/job_search/AI/data/eval/retrieval/retrieval"
     # 40개 평가용 데이터 로드
-    job_data_file = os.path.join(eval_dir, "job_data_40.json")
+    job_data_file = os.path.join(eval_dir, "data.json")
     with open(job_data_file, 'r', encoding='utf-8') as f:
         job_data = json.load(f)
     
@@ -114,5 +113,5 @@ if __name__ == "__main__":
     # save_evaluation_data(parsed_job_data, relevant_indices)
     
     print("실제 데이터로 리트리버 평가")
-    real_results = evaluate_retriever_with_real_data()
-
+    # real_results = evaluate_retriever_with_real_data("seoul_junior_nlp_hightshcool")
+    print(real_results)

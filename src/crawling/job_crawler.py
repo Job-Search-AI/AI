@@ -1,5 +1,8 @@
 import sys
 import os
+import json
+
+sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -42,7 +45,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
             print("채용 정보 영역을 찾을 수 없습니다. 기본 대기 시간을 사용합니다.")
         
         # 추가 대기 시간 (동적 콘텐츠 로딩을 위해)
-        time.sleep(3)
+        time.sleep(1)
         
         try:
             # 공고정보만 추출
@@ -87,11 +90,11 @@ def crawl_job_html_from_saramin(url, max_count=None):
                         driver.get(href)
                         try:
                             # 첫 번째 section 로딩 대기
-                            time.sleep(3)
+                            time.sleep(1)
                             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".wrap_jview > section:first-of-type")))
                         except:
                             print("첫 번째 section 로딩 대기 시간 초과")
-                            time.sleep(2)
+                            time.sleep(1)
 
                         try:
                             # 상세 제목 추출
@@ -274,24 +277,9 @@ if __name__ == "__main__":
     # python -m src.crawling.job_crawler
     print("사람인 채용 정보 추출 시작...")
 
-    # 프론트엔드에서 받은 정보
-    user_info = {
-        "searchType": "search", # 검색 타입
-        "searchword": "AI+%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4", # 검색 키워드 (AI 엔지니어)
-        "loc_mcd": "101000", # 지역 코드
-        "edu_min": "6", # 학력 최소
-        "edu_max": "9", # 학력 최대
-        "edu_none": "y", # 학력 무관
-        "company_cd": "0%2C1%2C2%2C3%2C4%2C5%2C6%2C7%2C9%2C10", # 기업 규모 코드
-        "exp_cd": "1", # 경력 코드
-        "exp_none": "y", # 경력 무관
-        "panel_type": "", # 패널 타입
-        "search_optional_item": "y", # 선택 검색 항목
-        "search_done": "y", # 검색 완료
-        "panel_count": "y", # 패널 카운트
-        "preview": "y", # 미리보기
-    }
+    # 서울/신입/딥러닝,머신러닝/고교~4년제
+    url = "https://www.saramin.co.kr/zf_user/search?loc_mcd=101000&cat_kewd=108%2C109&company_cd=0%2C1%2C2%2C3%2C4%2C5%2C6%2C7%2C9%2C10&exp_cd=1&edu_min=6&edu_max=11&edu_none=y&panel_type=&search_optional_item=y&search_done=y&panel_count=y&preview=y"
 
     # 사람인 채용 정보 html 추출
-    html_content = crawl_job_html_from_saramin(user_info, 3)
+    html_content = crawl_job_html_from_saramin(url, 50)
     print(html_content)

@@ -6,6 +6,7 @@ import sys
 # 이 파일을 단독으로 실행시킬시 아래의 두 주석을 풀고 실행시켜야 캐쉬저장된다.
 # cache_dir = '/content/drive/MyDrive/ai_enginner/job_search/AI/cache/'
 # os.environ['HF_HOME'] = cache_dir
+sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
 from sentence_transformers import SentenceTransformer
 from src.utils import dict_to_str
@@ -44,7 +45,7 @@ def similarity_docs_retrieval(query, documents):
     # 임베딩 계산
     print('임베딩 계산 시작')
     query_embeddings = model.encode(query, prompt_name="query")
-    document_embeddings = model.encode(documents_for_embedding)
+    document_embeddings = model.encode(documents_for_embedding, batch_size=8)
     print('임베딩 계산 완료')
 
     # 코사인 유사도 점수 계산
