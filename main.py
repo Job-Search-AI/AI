@@ -1,10 +1,10 @@
 print("=== Job Search AI 시스템 시작 ===")
-# pip install -q selenium ipywidgets bitsandbytes
+# pip install -q selenium bitsandbytes
 
 import sys
 import os
 
-os.system("pip install -q selenium ipywidgets bitsandbytes")
+os.system("pip install -q selenium bitsandbytes")
 
 from src import (
     crawl_job_html_from_saramin,
