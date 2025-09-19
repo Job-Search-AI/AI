@@ -45,7 +45,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
             print("채용 정보 영역을 찾을 수 없습니다. 기본 대기 시간을 사용합니다.")
         
         # 추가 대기 시간 (동적 콘텐츠 로딩을 위해)
-        time.sleep(1)
+        time.sleep(0.5)
         
         try:
             # 공고정보만 추출
@@ -90,11 +90,11 @@ def crawl_job_html_from_saramin(url, max_count=None):
                         driver.get(href)
                         try:
                             # 첫 번째 section 로딩 대기
-                            time.sleep(1)
+                            time.sleep(0.5)
                             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".wrap_jview > section:first-of-type")))
                         except:
                             print("첫 번째 section 로딩 대기 시간 초과")
-                            time.sleep(1)
+                            time.sleep(0.5)
 
                         try:
                             # 상세 제목 추출
@@ -153,7 +153,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
                                             iframe_el = iframe_elements[0]
                                             try:
                                                 driver.switch_to.frame(iframe_el)
-                                                time.sleep(1)
+                                                time.sleep(0.5)
                                                 detail_inner_text = driver.find_element(By.TAG_NAME, "body").text
                                                 print("상세 내용 추출 완료")
                                             finally:
@@ -189,7 +189,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
                                 try:
                                     button = first_section.find_element(By.CSS_SELECTOR, "div.jv_cont.jv_benefit button.btn_more_cont")
                                     button.click()
-                                    time.sleep(1)  # 클릭 후 DOM 업데이트 대기 (필요 없으면 제거 가능)
+                                    time.sleep(0.5)  # 클릭 후 DOM 업데이트 대기 (필요 없으면 제거 가능)
                                 except Exception as e_benefit_button:
                                     print(f"복리후생 버튼 클릭 실패: {e_benefit_button}")
 

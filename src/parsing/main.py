@@ -8,6 +8,7 @@ from src.parsing.location import parse_location_text
 from src.parsing.howto import parse_howto_text
 from src.parsing.applicant_stats import parse_applicant_stats_text
 from src.parsing.title import parse_title_text
+from src.parsing.metadata_converter import convert_html_list_to_metadata_list
 
 from src.crawling.job_crawler import crawl_job_html_from_saramin
 from config import EVAL_URL
@@ -44,7 +45,32 @@ def parsing_job_info(html_contents):
     return job_info_list
 
 
+def parsing_job_metadata(html_contents, base_url=""):
+    """
+    html_contents를 메타데이터 형식으로 파싱
+    
+    Args:
+        html_contents: list[str] - HTML 컨텐츠 리스트
+        base_url: str - 기본 URL
+    
+    Returns:
+        list[dict] - 메타데이터 딕셔너리 리스트
+    """
+    # HTML을 직접 메타데이터로 변환
+    metadata_list = convert_html_list_to_metadata_list(html_contents, base_url)
+    
+    return metadata_list
+
+
 if __name__ == "__main__":
     html_contents = crawl_job_html_from_saramin(EVAL_URL, 3)
     job_info = parsing_job_info(html_contents)
+    print("=== 텍스트 파싱 결과 ===")
     print(job_info)
+    
+    print("\n=== 메타데이터 파싱 결과 ===")
+    metadata = parsing_job_metadata(html_contents, EVAL_URL)
+    for i, meta in enumerate(metadata):
+        print(f"\n--- 채용공고 {i+1} ---")
+        for key, value in meta.items():
+            print(f"{key}: {value}")
