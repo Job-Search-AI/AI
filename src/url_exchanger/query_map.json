@@ -1,84 +1,45 @@
 {
-  "queries": [
-    {
-      "description": "지역코드",
-      "key": "loc_mcd",
-      "value": {
-        "서울": 101000,
-        "경기": 102000
-      }
-    },
-    {
-      "description": "직무코드",
-      "key": "cat_kewd",
-      "value": {
-        "머신러닝": 109,
-        "딥러닝": 108,
-        "백엔드": 84,
-        "프론트엔드": 92,
-        "풀스택": 2232,
-        "데이터분석가": 82
-      }
-    },
-    {
-      "description": "경력코드",
-      "key": "exp_cd",
-      "value": {
-        "신입": 1,
-        "경력": 2
-      }
-    },
-    {
-      "description": "경력년차 코드, exp_min과 exp_max는 항상 같은값을 갖는다.",
-      "key": "exp_min, exp_max",
-      "value": {
-	      "1년차~20년차": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-      }
-    },
-    {
-      "description": "경력무관여부",
-      "key": "exp_none",
-      "value": {
-        "경력무관": "y"
-      }
-    },
-    {
-      "description": "학력무관여부",
-      "key": "edu_none",
-      "value": {
-        "학력무관": "y"
-      }
-    },
-    {
-      "description": "최소학력",
-      "key": "edu_min",
-      "value": {
-        "고졸": 6,
-        "2~3년제대학졸업": 7,
-        "4년제대학교졸업": 8,
-        "석사졸업": 9,
-        "박사졸업": 5
-      }
-    },
-    {
-      "description": "최대학력",
-      "key": "edu_max",
-      "value": {
-        "고졸": 9,
-        "2~3년제대학졸업": 10,
-        "4년제대학졸업": 11,
-        "석사졸업": 12,
-        "박사졸업": 13
-      }
-    },
-    {
-      "description": "고용형태",
-      "key": "job_type",
-      "value": {
-        "정규직": 1,
-        "계약직": 2,
-        "인턴직": 4
-      }
-    }
-  ]
+  "지역": {
+      "서울": "loc_mcd=101000",
+      "경기": "loc_mcd=102000"
+  },
+  "직무": {
+      "머신러닝": "cat_kewd=109",
+      "딥러닝": "cat_kewd=108",
+      "백엔드": "cat_kewd=84",
+      "프론트엔드": "cat_kewd=92",
+      "풀스택": "cat_kewd=2232",
+      "데이터 사이언티스트": "cat_kewd=82",
+      "ai 엔지니어": "cat_kewd=110"
+  },
+  "경력": {
+      "신입": "exp_min=1&exp_max=1",
+      "1년차": "exp_min=2&exp_max=2",
+      "2년차": "exp_min=3&exp_max=3",
+      "3년차": "exp_min=4&exp_max=4",
+      "4년차": "exp_min=5&exp_max=5",
+      "5년차": "exp_min=6&exp_max=6",
+      "6년차": "exp_min=7&exp_max=7",
+      "7년차": "exp_min=8&exp_max=8",
+      "8년차": "exp_min=9&exp_max=9",
+      "9년차": "exp_min=10&exp_max=10",
+      "10년차": "exp_min=11&exp_max=11",
+      "11년차": "exp_min=12&exp_max=12",
+      "12년차": "exp_min=13&exp_max=13",
+      "13년차": "exp_min=14&exp_max=14",
+      "14년차": "exp_min=15&exp_max=15",
+      "15년차": "exp_min=16&exp_max=16",
+      "16년차": "exp_min=17&exp_max=17",
+      "17년차": "exp_min=18&exp_max=18",
+      "18년차": "exp_min=19&exp_max=19",
+      "19년차": "exp_min=20&exp_max=20",
+      "20년차": "exp_min=21&exp_max=21"
+  },
+  "학력": {
+      "고등학교": "edu_min=6&edu_max=9",
+      "2~3년제대학": "edu_min=7&edu_max=10",
+      "4년제대학교": "edu_min=8&edu_max=11",
+      "석사": "edu_min=9&edu_max=12",
+      "박사": "edu_min=5&edu_max=13"
+  }
 }

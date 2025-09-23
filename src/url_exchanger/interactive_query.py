@@ -35,7 +35,7 @@ def interactive_query_handler(initial_query: Optional[str] = None, max_iteration
                 current_query = user_input
                 initial_query = user_input
                 break
-            print("❌ 검색 조건을 입력해주세요.")
+            print("검색 조건을 입력해주세요.")
 
     print(f"사용자 입력: {current_query}")
     conversation.append({"role": "user", "content": current_query})
@@ -48,7 +48,7 @@ def interactive_query_handler(initial_query: Optional[str] = None, max_iteration
         
         if result['success']:
             # 성공적으로 URL 생성됨
-            print("✅ URL 생성 성공!")
+            print("URL 생성 성공!")
             print(f"최종 URL: {result['url']}")
             
             conversation.append({
@@ -74,7 +74,7 @@ def interactive_query_handler(initial_query: Optional[str] = None, max_iteration
                 additional_info = input("추가 정보를 입력해주세요: ").strip()
                 
                 if not additional_info:
-                    print("❌ 추가 정보가 입력되지 않았습니다.")
+                    print("추가 정보가 입력되지 않았습니다.")
                     break
                 
                 conversation.append({"role": "user", "content": additional_info})
@@ -83,13 +83,13 @@ def interactive_query_handler(initial_query: Optional[str] = None, max_iteration
                 current_query = f"{initial_query} {additional_info}"
                 print(f"업데이트된 쿼리: {current_query}")
             else:
-                print("❌ 최대 반복 횟수에 도달했습니다.")
+                print("최대 반복 횟수에 도달했습니다.")
                 break
         
         else:
             # 기타 오류
             error_msg = result.get('error', '알 수 없는 오류가 발생했습니다.')
-            print(f"❌ 오류 발생: {error_msg}")
+            print(f"오류 발생: {error_msg}")
             
             conversation.append({
                 "role": "assistant", 
@@ -98,11 +98,10 @@ def interactive_query_handler(initial_query: Optional[str] = None, max_iteration
             break
     
     # 실패한 경우
-    print("❌ URL 생성 실패")
+    print("URL 생성 실패")
     exit(1)
 
 
 if __name__ == "__main__":
-    print("=== 대화형 채용공고 검색 실행 ===")
     result = interactive_query_handler()
 
