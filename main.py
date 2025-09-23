@@ -19,24 +19,18 @@ from config import USER_INFO
 generated_url, final_query = interactive_query_handler()
 
 # 2) 사람인 채용 정보 html 추출
-html_content = crawl_job_html_from_saramin(generated_url, USER_INFO, 3)
+html_contents = crawl_job_html_from_saramin(search_url, max_jobs)
 
-# 3) 채용 정보 파싱
-documents = parsing_job_info(html_content)
+# 3) 채용 정보 메타데이터 추출
+metadata_list = convert_html_list_to_metadata_list(html_contents, search_url)
 
-# 4) 임베딩 리트리버
-retrieved_documents, retrieved_scores = similarity_docs_retrieval(final_query, documents)
-
-# 5) LLM 사용자 질문 응답
-response = generate_response(final_query, retrieved_documents)
-
-html_content = crawl_job_html_from_saramin(generated_url, USER_INFO, 3)
-
-# 3) 채용 정보 파싱
-documents = parsing_job_info(html_content)
+# 4. 메타데이터로 검색 인덱스 구축
+search_documents = create_search_documents_from_metadata(valid_metadata)
+retriever.build_index(search_documents)
 
 # 4) 임베딩 리트리버
-retrieved_documents, retrieved_scores = similarity_docs_retrieval(final_query, documents)
+retrieved_docs, scores = retriever.search(user_query, top_k=5)
 
-# 5) LLM 사용자 질문 응답
-response = generate_response(final_query, retrieved_documents)
+# 5. 검색 결과로 LLM 요약 생성
+card_metadata_list = batch_process_jobs(user_query, search_results_metadata)
+
