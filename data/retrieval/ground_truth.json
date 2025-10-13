@@ -1,0 +1,46 @@
+[
+  { 
+    "query": "서울 신입 4년제대졸 NLP 개발자",
+    "relevant_doc_indices": [1, 3, 4, 8, 9, 20, 38, 39]
+  },  
+  {
+    "query": "서울 신입 고졸 NLP 개발자",
+    "relevant_doc_indices": [3, 20, 38, 39]
+  },  
+  {
+    "query": "서울 신입 대졸 AI 연구원",
+    "relevant_doc_indices": [6, 12, 17, 21,22, 23, 25, 27, 26, 32]
+  },  
+  {
+    "query": "서울 신입 4년제대졸 시뮬레이션 개발자",
+    "relevant_doc_indices": [7]
+  },  
+  {
+    "query": "서울 신입 대졸 RAG 엔지니어",
+    "relevant_doc_indices": [3,4,8, 38]
+  },
+  {
+    "query": "서울 3년경력 대졸 프론트엔드, 백엔드 웹개발",
+    "relevant_doc_indices": [11]
+  },
+  {
+    "query": "서울 신입 대졸 ai 엔지니어",
+    "relevant_doc_indices": [1, 3, 4, 8, 9, 13]
+  },
+  {
+    "query": "서울 신입 대졸 소프트웨어 개발자",
+    "relevant_doc_indices": [15]
+  },
+  {
+    "query": "서울 무관 대졸 데이터사이언티스트",
+    "relevant_doc_indices": [3, 18, 33]
+  },
+  {
+    "query": "서울 무관 2,3년제 컴퓨터비전,CV 개발자",
+    "relevant_doc_indices": [18, 19, 29]
+  },
+  {
+    "query": "서울 신입 고졸 컴퓨터비전 개발자",
+    "relevant_doc_indices": [22, 29]
+  }
+]
