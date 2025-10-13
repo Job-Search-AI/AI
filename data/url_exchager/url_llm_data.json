@@ -1,6 +1,6 @@
 [
   {
-    "input": "나 고졸에 신입 AI 개발자인데, 서울 쪽 공고 쫌 찾아줘 봐.",
+    "input": "나 고졸에 신입 ai 개발자인데, 서울 쪽 공고 쫌 찾아줘 봐.",
     "label": ["O","B-EDU","O","B-CAR","B-JOB","I-JOB","O","O","O","B-LOC","O","O","O","O","O","O","O"]
   },
   {
@@ -28,7 +28,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 신입 대학교 졸업인데, 경기 판교 근처 공고 빨리 보여줘.",
+    "input": "ai 엔지니어 신입 대학교 졸업인데, 경기 판교 근처 공고 빨리 보여줘.",
     "label": ["B-JOB","I-JOB","B-CAR","B-EDU","O","O","O","O","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
@@ -56,7 +56,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","B-EDU","O","O","O","B-LOC","O","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 3년 대졸 서울 종로구 채용 정보 없나?",
+    "input": "ai 엔지니어 경력 3년 대졸 서울 종로구 채용 정보 없나?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
@@ -84,7 +84,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 신입 학사인데, 경기 쪽에 공고 뜬 거 보여줘.",
+    "input": "ai 개발자 신입 학사인데, 경기 쪽에 공고 뜬 거 보여줘.",
     "label": ["B-JOB","I-JOB","B-CAR","B-EDU","O","O","O","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
@@ -108,7 +108,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","I-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 3년 학사인데, 경기 공고 좋은 거 찾아 줘.",
+    "input": "ai 엔지니어 경력 3년 학사인데, 경기 공고 좋은 거 찾아 줘.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","O","O","O","O","O","O","O"]
   },
   {
@@ -136,7 +136,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 1년차 고졸 서울 중랑구 쪽 회사 검색해 줘.",
+    "input": "ai 개발자 1년차 고졸 서울 중랑구 쪽 회사 검색해 줘.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
@@ -164,7 +164,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","B-EDU","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 5년 학사 경기 공고 좋은 거 찾아 줘.",
+    "input": "ai 엔지니어 경력 5년 학사 경기 공고 좋은 거 찾아 줘.",
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","B-EDU","B-LOC","O","O","O","O","O","O","O"]
   },
   {
@@ -192,7 +192,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 신입 고졸 서울 중구 쪽 회사 검색해 줘.",
+    "input": "ai 개발자 신입 고졸 서울 중구 쪽 회사 검색해 줘.",
     "label": ["B-JOB","I-JOB","B-CAR","B-EDU","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
@@ -208,7 +208,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 5년차 전문대 나왔는데, 서울 강서 쪽 일자리 급구!",
+    "input": "ai 개발자 5년차 전문대 나왔는데, 서울 강서 쪽 일자리 급구!",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
@@ -216,7 +216,7 @@
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 신입 석사인데, 서울 동대문구 채용 정보 뜬 거 빨리 알려줘.",
+    "input": "ai 개발자 신입 석사인데, 서울 동대문구 채용 정보 뜬 거 빨리 알려줘.",
     "label": ["B-JOB","I-JOB","B-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O","O","O","O"]
   },
   {
@@ -228,7 +228,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","B-EDU","I-EDU","O","O","O","B-LOC","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 경력 2년 전문대 나왔는데, 경기 성남 쪽으로 알아볼라구.",
+    "input": "ai 개발자 경력 2년 전문대 나왔는데, 경기 성남 쪽으로 알아볼라구.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
@@ -272,7 +272,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 3년차 대졸 서울 강북구 일자리 쌉가능?",
+    "input": "ai 개발자 3년차 대졸 서울 강북구 일자리 쌉가능?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","I-LOC","O","O","O"]
   },
   {
@@ -296,7 +296,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 5년 대졸인데, 서울 강동구 쪽 공고 없냐?",
+    "input": "ai 엔지니어 경력 5년 대졸인데, 서울 강동구 쪽 공고 없냐?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
@@ -324,7 +324,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 5년차 고졸인데, 경기 김포 지역 공고 보여줘.",
+    "input": "ai 개발자 5년차 고졸인데, 경기 김포 지역 공고 보여줘.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O"]
   },
   {
@@ -352,7 +352,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","B-EDU","O","O","O","B-LOC","I-LOC","O","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 4년 전문대 서울 금천구 채용 정보 있냐고?",
+    "input": "ai 엔지니어 경력 4년 전문대 서울 금천구 채용 정보 있냐고?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","B-LOC","I-LOC","I-LOC","O","O","O","O","O","O"]
   },
   {
@@ -368,7 +368,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 2년차 전문대 나왔는데 서울 쪽 공고 좋은 거 부탁함.",
+    "input": "ai 개발자 2년차 전문대 나왔는데 서울 쪽 공고 좋은 거 부탁함.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
@@ -392,7 +392,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","B-EDU","B-LOC","I-LOC","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 5년차 대졸인데 경기 쪽 회사들 채용 건 좀 봐줘.",
+    "input": "ai 엔지니어 5년차 대졸인데 경기 쪽 회사들 채용 건 좀 봐줘.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O","O","O","O","O"]
   },
   {
@@ -416,7 +416,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 석사 학력 필수로 구하는 곳?",
+    "input": "ai 개발자 석사 학력 필수로 구하는 곳?",
     "label": ["B-JOB","I-JOB","B-EDU","O","O","O","O","O","O","O"]
   },
   {
@@ -432,7 +432,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "경기 쪽 AI 엔지니어 신입 채용 좀 부탁할게.",
+    "input": "경기 쪽 ai 엔지니어 신입 채용 좀 부탁할게.",
     "label": ["B-LOC","O","B-JOB","I-JOB","B-CAR","O","O","O","O","O","O"]
   },
   {
@@ -460,7 +460,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","O","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 학력 조건 없이 뽑는 곳 없음?",
+    "input": "ai 개발자 학력 조건 없이 뽑는 곳 없음?",
     "label": ["B-JOB","I-JOB","O","O","O","O","O","O","O","O","O"]
   },
   {
@@ -488,7 +488,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","O","O","O","O","O"]
   },
   {
-    "input": "서울 강남쪽에 AI 엔지니어 공고 뜸?",
+    "input": "서울 강남쪽에 ai 엔지니어 공고 뜸?",
     "label": ["B-LOC","I-LOC","O","O","B-JOB","I-JOB","O","O","O"]
   },
   {
@@ -508,7 +508,7 @@
     "label": ["B-LOC","O","B-EDU","B-CAR","B-JOB","I-JOB","I-JOB","I-JOB","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 경력 5년짜리 공고는?",
+    "input": "ai 개발자 경력 5년짜리 공고는?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","O","O","O","O"]
   },
   {
@@ -536,7 +536,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-LOC","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 석사 학위로 서울 채용 건 알아볼라구.",
+    "input": "ai 엔지니어 석사 학위로 서울 채용 건 알아볼라구.",
     "label": ["B-JOB","I-JOB","B-EDU","O","O","B-LOC","O","O","O","O","O","O"]
   },
   {
@@ -556,7 +556,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 경력 2년짜리 서울 공고 줘.",
+    "input": "ai 개발자 경력 2년짜리 서울 공고 줘.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","O","B-LOC","O","O","O"]
   },
   {
@@ -572,7 +572,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","O","B-EDU","O","O","O","O","O"]
   },
   {
-    "input": "경기 쪽 AI 개발자 채용 공고만 줘.",
+    "input": "경기 쪽 ai 개발자 채용 공고만 줘.",
     "label": ["B-LOC","O","B-JOB","I-JOB","O","O","O","O","O"]
   },
   {
@@ -596,7 +596,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","B-LOC","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 1년차 서울 쪽 채용 건 궁금해.",
+    "input": "ai 개발자 1년차 서울 쪽 채용 건 궁금해.",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-LOC","O","O","O","O","O","O"]
   },
   {
@@ -624,7 +624,7 @@
     "label": ["B-LOC","O","B-JOB","I-JOB","I-JOB","O","O","O","O","O","O","B-CAR","O","O"]
   },
   {
-    "input": "AI 개발자 석사 학위면 서울에 좋은 일자리 많음?",
+    "input": "ai 개발자 석사 학위면 서울에 좋은 일자리 많음?",
     "label": ["B-JOB","I-JOB","B-EDU","O","O","B-LOC","O","O","O","O","O","O","O"]
   },
   {
@@ -660,7 +660,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 서울에 공고 뜬 거 뭐 있냐?",
+    "input": "ai 개발자 서울에 공고 뜬 거 뭐 있냐?",
     "label": ["B-JOB","I-JOB","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
@@ -684,7 +684,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-EDU","O","O","O","B-LOC","O","O"]
   },
   {
-    "input": "AI엔지니어 신입이면 학력은 고졸이어도 됨?",
+    "input": "ai엔지니어 신입이면 학력은 고졸이어도 됨?",
     "label": ["B-JOB","I-JOB","B-CAR","O","O","O","B-EDU","O","O","O","O"]
   },
   {
@@ -708,7 +708,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 신입인데 서울로 구함.",
+    "input": "ai 개발자 신입인데 서울로 구함.",
     "label": ["B-JOB","I-JOB","B-CAR","O","O","B-LOC","O","O","O","O"]
   },
   {
@@ -732,7 +732,7 @@
     "label": ["B-LOC","O","O","B-JOB","I-JOB","I-JOB","I-JOB","B-EDU","O","O","O","O"]
   },
   {
-    "input": "AI엔지니어 신입으로 서울에서 일할 사람 구함?",
+    "input": "ai엔지니어 신입으로 서울에서 일할 사람 구함?",
     "label": ["B-JOB","I-JOB","B-CAR","O","B-LOC","O","O","O","O","O","O","O"]
   },
   {
@@ -752,7 +752,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","O","B-EDU","O","O","O","O","B-LOC","O","O"]
   },
   {
-    "input": "경기 쪽 AI 개발자 공고 중 학력 상관없는 곳은?",
+    "input": "경기 쪽 ai 개발자 공고 중 학력 상관없는 곳은?",
     "label": ["B-LOC","O","B-JOB","I-JOB","O","O","O","O","O","O","O","O"]
   },
   {
@@ -780,7 +780,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-EDU","B-CAR","O","B-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI엔지니어 경력 1년 석사 학위로 서울 쪽 채용 건 부탁.",
+    "input": "ai엔지니어 경력 1년 석사 학위로 서울 쪽 채용 건 부탁.",
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","I-CAR","B-EDU","O","O","B-LOC","O","O","O","O","O"]
   },
   {
@@ -804,7 +804,7 @@
     "label": ["B-EDU","I-EDU","I-EDU","O","O","B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","I-CAR","I-CAR","O","B-LOC","I-LOC","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 신입인데 2년제 대학교 나오고 경기 쪽 회사 구함.",
+    "input": "ai 개발자 신입인데 2년제 대학교 나오고 경기 쪽 회사 구함.",
     "label": ["B-JOB","I-JOB","B-CAR","O","O","B-EDU","I-EDU","I-EDU","I-EDU","O","O","B-LOC","O","O","O","O","O"]
   },
   {
@@ -832,7 +832,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","B-EDU","I-EDU","I-EDU","O","O","B-LOC","O","O","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 3년제 졸업하고 경력 2년이면 경기 지역 채용 정보 있냐?",
+    "input": "ai 엔지니어 3년제 졸업하고 경력 2년이면 경기 지역 채용 정보 있냐?",
     "label": ["B-JOB","I-JOB","B-EDU","I-EDU","I-EDU","O","O","O","B-CAR","I-CAR","O","B-LOC","O","O","O","O","O","O"]
   },
   {
@@ -864,7 +864,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-CAR","O","O","B-EDU","I-EDU","I-EDU","O","B-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 3년제 대학교 졸업했고 경력 2년인데 경기 쪽 공고 줘 봐.",
+    "input": "ai 개발자 3년제 대학교 졸업했고 경력 2년인데 경기 쪽 공고 줘 봐.",
     "label": ["B-JOB","I-JOB","B-EDU","I-EDU","I-EDU","I-EDU","O","O","O","B-CAR","I-CAR","I-CAR","O","O","B-LOC","O","O","O","O","O"]
   },
   {
@@ -892,7 +892,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","I-JOB","B-EDU","I-EDU","I-EDU","O","O","B-CAR","O","B-LOC","O","O","O","O","O","O"]
   },
   {
-    "input": "AI 엔지니어 경력 4년차인데 2년제 대학교 학력도 서울에서 통함?",
+    "input": "ai 엔지니어 경력 4년차인데 2년제 대학교 학력도 서울에서 통함?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","I-CAR","O","O","B-EDU","I-EDU","I-EDU","I-EDU","O","O","B-LOC","O","O","O","O"]
   },
   {
@@ -924,7 +924,7 @@
     "label": ["B-JOB","I-JOB","I-JOB","B-CAR","O","O","B-EDU","I-EDU","I-EDU","I-EDU","O","O","B-LOC","O","O","O","O","O"]
   },
   {
-    "input": "AI 개발자 경력 1년차 2년제 대학교 학력인데 서울 공고 콜?",
+    "input": "ai 개발자 경력 1년차 2년제 대학교 학력인데 서울 공고 콜?",
     "label": ["B-JOB","I-JOB","B-CAR","I-CAR","I-CAR","I-CAR","B-EDU","I-EDU","I-EDU","I-EDU","O","O","O","B-LOC","O","O","O"]
   },
   {
