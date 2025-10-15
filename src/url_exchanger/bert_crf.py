@@ -134,7 +134,7 @@ def predict_crf_bert(sentence, model, crf, tokenizer, device):
     # 토큰 디코딩 (기존과 동일)
     decode = tokenizer.convert_ids_to_tokens(tokenized_input['input_ids'][0])
 
-    res = {
+    entity = {
         '직무': '',
         '경력': '',
         '학력': '',
@@ -145,9 +145,9 @@ def predict_crf_bert(sentence, model, crf, tokenizer, device):
       word = word.replace('#', '')
       if label_to_slot.get(pred):
         if label_to_slot[pred] != 'O':
-            res[label_to_slot[pred]] += word
+            entity[label_to_slot[pred]] += word
 
-    return res
+    return entity
 
 
 if __name__ == "__main__":
@@ -177,4 +177,4 @@ if __name__ == "__main__":
     model, tokenizer = get_bert_model_tokenizer(device, model_name, label2id, id2label)
     crf = CRF(len(id2label), batch_first=True).to(device)
 
-    res = predict_crf_bert('야, ERP 컨설턴트 경력 5년 대졸이면, 경기 공고 좋은 거 없냐?', model, crf, tokenizer, device)
+    entity = predict_crf_bert('야, ERP 컨설턴트 경력 5년 대졸이면, 경기 공고 좋은 거 없냐?', model, crf, tokenizer, device)
