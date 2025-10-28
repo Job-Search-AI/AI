@@ -10,7 +10,8 @@
       "프론트엔드": "cat_kewd=92",
       "풀스택": "cat_kewd=2232",
       "데이터 사이언티스트": "cat_kewd=82",
-      "ai 엔지니어": "cat_kewd=110"
+      "ai 엔지니어": "cat_kewd=110",
+      "erp": "cat_kewd=372"
   },
   "경력": {
       "신입": "exp_min=1&exp_max=1",
