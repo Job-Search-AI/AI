@@ -1,7 +1,5 @@
-print("=== Job Search AI 시스템 시작 ===")
-# pip install -q selenium bitsandbytes
-
-# os.system("pip install -q selenium bitsandbytes")
+from pydantic import BaseModel
+from fastapi import FastAPI
 
 from src import (
     crawl_job_html_from_saramin,
@@ -9,6 +7,7 @@ from src import (
     generate_response,
     parsing_job_info,
     predict_crf_bert,
+    normalize_and_validate_entities,
     keep_loading_job_model,
 )
 
@@ -22,26 +21,49 @@ _MODEL_CACHE = {
 if _MODEL_CACHE["bert_model"] is None:   
     _MODEL_CACHE = keep_loading_job_model(bert_model="klue/bert-base")
 
-# 사용자 입력 검증
+# query
 
-# 2) NER 인식
-entity = predict_crf_bert('야, ERP 컨설턴트 경력 5년 대졸이면, 경기 공고 좋은 거 없냐?', _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE["device"])
+# follow up
 
-# 3) URL 생성
+# 첫 사용자 입력 질문
+class Query_Request(BaseModel):
+    user_input: str
 
-# 4) 사람인 채용 정보 html 추출
-html_contents = crawl_job_html_from_saramin(generated_url, max_jobs)
+# 부족한 정보 있을시 재질문
+class Follow_Up_Request(BaseModel):
+    user_input: str
+    prev_entity: dict
 
-# 5) 채용 정보 메타데이터 추출
-metadata_list = convert_html_list_to_metadata_list(html_contents, search_url)
+app = FastAPI()
 
-# 6) 메타데이터로 검색 인덱스 구축
-search_documents = create_search_documents_from_metadata(valid_metadata)
-retriever.build_index(search_documents)
+@app.post("/query")
+def handle_query(request: Query_Request):
+    user_input = request.user_input
 
-# 7) 임베딩 리트리버
-retrieved_docs, scores = retriever.search(user_query, top_k=5)
+    # 사용자 입력 NER 인식
+    entity = predict_crf_bert(user_input, _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE['device'])
 
-# 8) 검색 결과로 LLM 요약 생성
-card_metadata_list = batch_process_jobs(user_query, search_results_metadata)
+    # 사용자 입력 엔티티 표준화
+    # status: 표준화 완성 여부 상태
+    # message: 누락정보 재입력 요청 메시지
+    # missing_fields: 누락된 항목 리스트
+    # normalized_entities: 표준화된 엔티티
+    status, message, missing_fields, normalized_entities = normalize_and_validate_entities(entities)
+
+    # 만약 누락된 정보가 있다면, 재질문
+    if status == 'incomplete':
+        return {
+            "status": status,
+            "message": message,
+            "missing_fields": missing_fields,
+            "normalized_entities": normalized_entities
+        }
+        
+    # 누락된 정보가 없다면, 정상 진행
+    return {
+        "status": status,
+        "message": message,
+        "missing_fields": missing_fields,
+        "normalized_entities": normalized_entities
+    }
 
