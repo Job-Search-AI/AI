@@ -168,12 +168,41 @@ def generate_missing_message(missing_fields):
     return '\n'.join(questions)
 
 
-def normalize_and_validate_entities(entities, synonym_dict_path):
-    # 전체 프로세스를 통합하는 메인 함수
-    # 1. 엔티티 표준화
-    # 2. 누락된 항목 확인
-    # 3. 누락된 항목이 있으면 재입력 요청 메시지 반환
-    # 4. 모든 항목이 있으면 표준화된 엔티티 반환
+def normalize_and_validate_entities(entities):
+    """
+    전체 프로세스를 통합하는 메인 함수
+    1. 엔티티 표준화
+    2. 누락된 항목 확인
+    3. 누락된 항목이 있으면 재입력 요청 메시지 반환
+    4. 모든 항목이 있으면 표준화된 엔티티 반환
+
+    entities: 사용자 입력 엔티티
+    entities = {
+        '지역': '서울',
+        '직무': '머신러닝',
+        '경력': '1년차',
+        '학력': '석사'
+    }
+    
+    synonym_dict_path: 유사어 사전 파일 경로
+    synonym_dict_path = 'synonym_dict.json'
+
+    return
+    1. 표준화 완성 여부 상태
+    2. 누락정보 재입력 요청 메시지
+    3. 누락된 항목 리스트
+    4. 표준화된 엔티티
+    """
+    info_dict = {
+        'status': None,
+        'message': None,
+        'missing_fields': None,
+        'normalized_entities': None
+    }
+
+    # 유사어 사전 경로 설정
+    base_dir = os.getenv("JOB_SEARCH_ROOT")
+    synonym_dict_path = os.path.join(base_dir,"data", "url_exchanger", 'synonym_dict.json')
     
     # 사용자 입력한 엔티티를 유사어 사전에서 찾아 존재하면 표준화된 엔티티로 변환
     normalized_entities = normalize_entities(entities, synonym_dict_path)
@@ -183,15 +212,25 @@ def normalize_and_validate_entities(entities, synonym_dict_path):
     
     if missing_fields:
         message = generate_missing_message(missing_fields)
-        return {
-            'status': 'incomplete',
-            'message': message,
-            'missing_fields': missing_fields,
-            'normalized_entities': normalized_entities
-        }
+        info_dict['status'] = 'incomplete'
+        info_dict['message'] = message
+        info_dict['missing_fields'] = missing_fields
+        info_dict['normalized_entities'] = normalized_entities
+
+        return info_dict['status'], info_dict['message'], info_dict['missing_fields'], info_dict['normalized_entities']
     
-    return {
-        'status': 'complete',
-        'message': '모든 정보가 확인되었습니다.',
-        'normalized_entities': normalized_entities
+    info_dict['status'] = 'complete'
+    info_dict['message'] = '모든 정보가 확인되었습니다.'
+    info_dict['normalized_entities'] = normalized_entities
+    return info_dict['status'], info_dict['message'], info_dict['missing_fields'], info_dict['normalized_entities']
+
+
+if __name__ == "__main__":
+    entities = {
+        '지역': '서울',
+        '직무': 'ai 엔지니어',
+        '경력': '신입',
+        '학력': '고졸'
     }
+    result = normalize_and_validate_entities(entities)
+    print(result)

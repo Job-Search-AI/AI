@@ -106,6 +106,19 @@ def train_crf_bert(data_path, model_name):
         print(f"epoch {epoch+1} train_loss={total_loss/len(train_dataloader):.4f}")
 
 def predict_crf_bert(sentence, model, crf, tokenizer, device):
+    """
+    사용자 입력을 "직무", "경력", "학력", "지역" 4가지 항목 NER 인식
+
+    sentence: 사용자 입력
+    model: BERT 모델
+    crf: CRF 모델
+    tokenizer: 토크나이저
+    device: GPU/CPU
+
+    return
+    1. "직무", "경력", "학력", "지역" 4가지 항목 객체로 반환
+    """
+    
     label_to_slot = {
       'O': "O",
       "B-JOB" : "직무", # 직무
