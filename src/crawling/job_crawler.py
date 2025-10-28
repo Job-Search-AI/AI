@@ -2,9 +2,9 @@ import sys
 import os
 import json
 
-sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
-
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -16,6 +16,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
     url: 사용자 조건을 적용한 url
     max_count: 크롤링 데이터 개수
     """
+    service = Service(ChromeDriverManager().install())
     # Chrome 옵션 설정
     print("셀레니움 초기화 시작...")
     chrome_options = webdriver.ChromeOptions()
@@ -25,9 +26,11 @@ def crawl_job_html_from_saramin(url, max_count=None):
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36')
-    
+
     # ChromeDriver 자동 설치 및 WebDriver 초기화
-    driver = webdriver.Chrome(options=chrome_options)
+    chrome_driver_path = "/usr/bin/chromedriver"  # 설치된 경로 확인 필요
+    service = Service(chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     print("셀레니움 초기화 완료")
     # 수집된 상세 HTML 조각들을 저장할 리스트 (항상 리스트 반환을 위해 상단에서 초기화)
     details_html_parts = []
