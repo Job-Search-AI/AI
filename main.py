@@ -70,7 +70,29 @@ def handle_query(request: Query_Request):
     html_content = crawl_job_html_from_saramin(url, 50)
 
     # 6. html 파싱
-    job_info = parsing_job_info(html_contents)
+    job_info_list = parsing_job_info(html_contents)
+
+    # 7. 임베딩, 리트리버
+    retriever = HybridRetriever(bm25_weight=0.6, embedding_weight=0.4)
+    retriever.build_index(job_info_list)
+
+    results, scores = retriever.search(user_input, top_k=5, combination_method="rrf", use_query_expansion=True)
+
+    for rank, (doc, score) in enumerate(zip(results, scores), 1):
+        print(f"Rank {rank}: {doc}, score: {score}")
+    
+    # 8. llm 응답 생성
+    response = generate_response(user_input, results)
+
+    return {
+        "status": "success",
+        "user_response": response,
+        "total_job_info_list": job_info_list,
+        "retrieved_job_info_list": results,
+    }
+
+    
+    
 
 
 
