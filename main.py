@@ -22,6 +22,8 @@ _MODEL_CACHE = {
 if _MODEL_CACHE["bert_model"] is None:   
     _MODEL_CACHE = keep_loading_job_model(bert_model="klue/bert-base")
 
+# 사용자 입력 검증
+
 # 2) NER 인식
 entity = predict_crf_bert('야, ERP 컨설턴트 경력 5년 대졸이면, 경기 공고 좋은 거 없냐?', _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE["device"])
 
