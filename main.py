@@ -9,6 +9,7 @@ from src import (
     predict_crf_bert,
     normalize_and_validate_entities,
     keep_loading_job_model,
+    mapping_url_query
 )
 
 _MODEL_CACHE = {
@@ -40,10 +41,10 @@ app = FastAPI()
 def handle_query(request: Query_Request):
     user_input = request.user_input
 
-    # 사용자 입력 NER 인식
+    # 1. 사용자 입력 NER 인식
     entity = predict_crf_bert(user_input, _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE['device'])
 
-    # 사용자 입력 엔티티 표준화
+    # 2. 사용자 입력 엔티티 표준화
     # status: 표준화 완성 여부 상태
     # message: 누락정보 재입력 요청 메시지
     # missing_fields: 누락된 항목 리스트
@@ -59,11 +60,18 @@ def handle_query(request: Query_Request):
             "normalized_entities": normalized_entities
         }
         
-    # 누락된 정보가 없다면, 정상 진행
-    return {
-        "status": status,
-        "message": message,
-        "missing_fields": missing_fields,
-        "normalized_entities": normalized_entities
-    }
+    # 3. URL 생성
+    url = mapping_url_query(normalized_entities)
+
+    # 4. 사람인 채용 정보 html 추출
+    html_contents = crawl_job_html_from_saramin(url, max_jobs)
+
+    # 5. 크롤링
+    html_content = crawl_job_html_from_saramin(url, 50)
+
+    # 6. html 파싱
+    job_info = parsing_job_info(html_contents)
+
+
+
 

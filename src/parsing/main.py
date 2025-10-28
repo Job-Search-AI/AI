@@ -15,6 +15,8 @@ from config import EVAL_URL
 
 def parsing_job_info(html_contents):
     """
+    html 파싱
+
     html_contents : list[str]
 
     return : list[str]  
@@ -63,13 +65,14 @@ def parsing_job_metadata(html_contents, base_url=""):
 
 
 if __name__ == "__main__":
-    html_contents = crawl_job_html_from_saramin(EVAL_URL, 3)
+    url = 'https://www.saramin.co.kr/zf_user/search?searchType=search?loc_mcd=101000&cat_kewd=109&exp_min=2&exp_max=2&edu_min=8&edu_max=11&edu_none=y&exp_none=y'
+    html_contents = crawl_job_html_from_saramin(url, 3)
     job_info = parsing_job_info(html_contents)
     print("=== 텍스트 파싱 결과 ===")
     print(job_info)
     
     print("\n=== 메타데이터 파싱 결과 ===")
-    metadata = parsing_job_metadata(html_contents, EVAL_URL)
+    metadata = parsing_job_metadata(html_contents, url)
     for i, meta in enumerate(metadata):
         print(f"\n--- 채용공고 {i+1} ---")
         for key, value in meta.items():

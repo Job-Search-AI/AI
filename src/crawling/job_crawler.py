@@ -14,6 +14,7 @@ import time
 def crawl_job_html_from_saramin(url, max_count=None):
     """
     url: 사용자 조건을 적용한 url
+    max_count: 크롤링 데이터 개수
     """
     # Chrome 옵션 설정
     print("셀레니움 초기화 시작...")
