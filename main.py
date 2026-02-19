@@ -1,19 +1,10 @@
 print("=== Job Search AI 시스템 시작 ===")
 # pip install -q selenium bitsandbytes
 
-import sys
-import os
-
-os.system("pip install -q selenium bitsandbytes")
-
 from src import (
     crawl_job_html_from_saramin,
-    similarity_docs_retrieval,
-    generate_response,
-    parsing_job_info,
 )
-from src.url_exchaging.interactive_query import interactive_query_handler
-from config import USER_INFO
+from src.url_exchanger.interactive_query import interactive_query_handler
 
 # 1) 사용자와 대화형으로 URL 생성
 generated_url, final_query = interactive_query_handler()

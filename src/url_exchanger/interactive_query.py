@@ -7,7 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.join(current_dir, '..', '..')
 sys.path.append(project_root)
 
-from src.url_exchaging.url_exchanger import process_user_input_to_url
+from src.url_exchanger.url_exchanger import process_user_input_to_url
 
 def interactive_query_handler(initial_query: Optional[str] = None, max_iterations: int = 3) -> Dict[str, Any]:
     """
