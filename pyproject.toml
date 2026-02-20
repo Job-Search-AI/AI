@@ -1,0 +1,41 @@
+[project]
+name = "job-search-ai"
+version = "0.1.0"
+description = "AI project for Saramin job search and analysis"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "beautifulsoup4",
+  "datasets",
+  "fastapi",
+  "langchain>=1.2.10",
+  "langchain-openai>=1.1.10",
+  "lxml",
+  "numpy",
+  "pandas",
+  "pydantic",
+  "requests",
+  "scikit-learn",
+  "selenium",
+  "sentence-transformers",
+  "torch",
+  "tqdm",
+  "transformers",
+  "uvicorn[standard]",
+]
+
+[project.optional-dependencies]
+search = [
+  "faiss-cpu",
+  "konlpy",
+]
+notebook = [
+  "ipykernel",
+  "ipywidgets",
+]
+quant = [
+  "bitsandbytes",
+]
+llm-serving = [
+  "vllm; platform_system != 'Darwin'",
+]
