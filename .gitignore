@@ -2,4 +2,6 @@
 .env
 cache/
 __pycache__/
-test/
+tests/
+tech_spec_docs/
+AGENTS.md

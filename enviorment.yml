@@ -1,3 +1,6 @@
+# Legacy conda environment file.
+# uv 전환 완료 후 레거시 참고용으로만 보존합니다.
+# 기본 개발 환경은 pyproject.toml + uv(.venv)입니다.
 name: job_search
 channels:
   - conda-forge

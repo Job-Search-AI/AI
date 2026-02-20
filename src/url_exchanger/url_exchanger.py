@@ -5,6 +5,7 @@ from datasets import load_dataset
 import sys
 from tqdm import tqdm
 import json
+from typing import Optional
 
 from config import PROMPT
 
