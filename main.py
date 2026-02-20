@@ -42,7 +42,7 @@ def handle_query(request: Query_Request):
     user_input = request.user_input
 
     # 1. 사용자 입력 NER 인식
-    entity = predict_crf_bert(user_input, _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE['device'])
+    entities = predict_crf_bert(user_input, _MODEL_CACHE["bert_model"], _MODEL_CACHE["crf"], _MODEL_CACHE["tokenizer"], _MODEL_CACHE['device'])
 
     # 2. 사용자 입력 엔티티 표준화
     # status: 표준화 완성 여부 상태
@@ -66,13 +66,10 @@ def handle_query(request: Query_Request):
     # 4. 사람인 채용 정보 html 추출
     html_contents = crawl_job_html_from_saramin(url, max_jobs)
 
-    # 5. 크롤링
-    html_content = crawl_job_html_from_saramin(url, 50)
-
-    # 6. html 파싱
+    # 5. html 파싱
     job_info_list = parsing_job_info(html_contents)
 
-    # 7. 임베딩, 리트리버
+    # 6. 임베딩, 리트리버
     retriever = HybridRetriever(bm25_weight=0.6, embedding_weight=0.4)
     retriever.build_index(job_info_list)
 
@@ -81,7 +78,7 @@ def handle_query(request: Query_Request):
     for rank, (doc, score) in enumerate(zip(results, scores), 1):
         print(f"Rank {rank}: {doc}, score: {score}")
     
-    # 8. llm 응답 생성
+    # 7. llm 응답 생성
     response = generate_response(user_input, results)
 
     return {
