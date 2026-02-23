@@ -120,15 +120,15 @@ def predict_crf_bert(sentence, model, crf, tokenizer, device):
     """
     
     label_to_slot = {
-      'O': "O",
-      "B-JOB" : "직무", # 직무
-      "I-JOB": "직무",
-      "B-CAR": "경력", # 경력
-      "I-CAR": "경력",
-      "B-EDU": "학력", # 학력
-      "I-EDU": "학력",
-      "B-LOC": "지역", # 지역
-      "I-LOC": "지역"
+        'O': "O",
+        "B-JOB" : "직무", # 직무
+        "I-JOB": "직무",
+        "B-CAR": "경력", # 경력
+        "I-CAR": "경력",
+        "B-EDU": "학력", # 학력
+        "I-EDU": "학력",
+        "B-LOC": "지역", # 지역
+        "I-LOC": "지역"
     }
 
     tokenized_input = tokenizer(sentence, return_tensors="pt", truncation=True)
@@ -155,10 +155,10 @@ def predict_crf_bert(sentence, model, crf, tokenizer, device):
     }
 
     for word, pred in zip(decode, predicted_token_class):
-      word = word.replace('#', '')
-      if label_to_slot.get(pred):
-        if label_to_slot[pred] != 'O':
-            entity[label_to_slot[pred]] += word
+        word = word.replace('#', '')
+        if label_to_slot.get(pred):
+            if label_to_slot[pred] != 'O':
+                entity[label_to_slot[pred]] += word
 
     return entity
 
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     # data_path = os.path.join(PROJECT_ROOT, "data/url_exchanger/url_llm_data.json")
 
     # model_name = "klue/bert-base"
-    # train_crf_bert(data_path, model_name)
+    # train_crf_bert(data_path, model_name) 
 
     # 추론
     label_list = [

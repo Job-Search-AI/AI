@@ -20,10 +20,10 @@ class HybridRetriever:
     """BM25와 임베딩 검색을 결합한 하이브리드 검색기"""
     
     def __init__(self, 
-                 bm25_weight: float = 0.5,
-                 embedding_weight: float = 0.5,
-                 k1: float = 1.5,
-                 b: float = 0.75):
+                bm25_weight: float = 0.5,
+                embedding_weight: float = 0.5,
+                k1: float = 1.5,
+                b: float = 0.75):
         """
         Args:
             bm25_weight: BM25 점수 가중치
@@ -85,16 +85,16 @@ class HybridRetriever:
             return scores_array.flatten()
     
     def _combine_scores_weighted_average(self, 
-                                       bm25_scores: np.ndarray, 
-                                       embedding_scores: np.ndarray) -> np.ndarray:
+                                        bm25_scores: np.ndarray, 
+                                        embedding_scores: np.ndarray) -> np.ndarray:
         """가중 평균으로 점수 결합"""
         return (self.bm25_weight * bm25_scores + 
                 self.embedding_weight * embedding_scores)
     
     def _combine_scores_rrf(self, 
-                           bm25_results: List[Tuple[int, float]], 
-                           embedding_results: List[Tuple[int, float]], 
-                           k: int = 60) -> List[Tuple[int, float]]:
+                            bm25_results: List[Tuple[int, float]], 
+                            embedding_results: List[Tuple[int, float]], 
+                            k: int = 60) -> List[Tuple[int, float]]:
         """Reciprocal Rank Fusion (RRF)로 점수 결합"""
         # 문서별 RRF 점수 계산
         rrf_scores = {}
@@ -113,10 +113,10 @@ class HybridRetriever:
         return sorted_results
     
     def search(self, 
-               query: str, 
-               top_k: int = 10,
-               combination_method: str = "weighted_average",
-               use_query_expansion: bool = True) -> Tuple[List[str], List[float]]:
+                query: str, 
+                top_k: int = 10,
+                combination_method: str = "weighted_average",
+                use_query_expansion: bool = True) -> Tuple[List[str], List[float]]:
         """하이브리드 검색 수행"""
         if not self.is_indexed:
             raise ValueError("인덱스가 구축되지 않았습니다. build_index()를 먼저 호출하세요.")

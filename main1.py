@@ -36,7 +36,7 @@ html_contents = crawl_job_html_from_saramin(generated_url, max_jobs)
 metadata_list = convert_html_list_to_metadata_list(html_contents, search_url)
 
 # 6) 메타데이터로 검색 인덱스 구축
-search_documents = create_search_documents_from_metadata(valid_metadata)
+search_documents = create_search_documents_from_metadata(metadata_list)
 retriever.build_index(search_documents)
 
 # 7) 임베딩 리트리버
