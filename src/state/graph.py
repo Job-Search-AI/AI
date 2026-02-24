@@ -34,6 +34,7 @@ class GraphState(TypedDict, total=False):
     url: str
     max_jobs: int
     html_contents: list[str]
+    crawled_count: int
     job_info_list: list[str]
     job_metadata_list: list[dict[str, object]]
 
