@@ -2,12 +2,16 @@
 Backward-compatible shim for CRF-BERT helpers.
 
 Source of truth:
-- predict node: src.url_exchanger.node
-- utility functions: src.url_exchanger.tools
+- predict node: src.node
+- utility functions: src.tools.slices.url_exchanger
 """
 
-from .node import predict_crf_bert as predict_crf_bert_node
-from .tools import build_tag_map, get_bert_model_tokenizer, train_crf_bert
+from src.node import predict_crf_bert as predict_crf_bert_node
+from src.tools.slices.url_exchanger import (
+    build_tag_map,
+    get_bert_model_tokenizer,
+    train_crf_bert,
+)
 
 
 def predict_crf_bert(user_input, bert_model, crf, tokenizer, device):

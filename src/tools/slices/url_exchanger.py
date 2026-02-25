@@ -1,20 +1,9 @@
 import json
 
-import torch
-from datasets import Dataset
-from torch.optim import AdamW
-from torch.utils.data import DataLoader
-from transformers import (
-    AutoTokenizer,
-    BertForTokenClassification,
-    DataCollatorForTokenClassification,
-    get_scheduler,
-)
-
 try:
-    from torchcrf import CRF
+    from torchcrf import CRF as _CRF
 except ModuleNotFoundError:
-    CRF = None
+    _CRF = None
 
 
 def load_synonym_dict(synonym_dict_path):
@@ -192,14 +181,22 @@ def build_tag_map(all_labels):
     return label2id, id2label
 
 def get_bert_model_tokenizer(device, model_name, label2id, id2label):
+    from transformers import AutoTokenizer, BertForTokenClassification
+
     model = BertForTokenClassification.from_pretrained(model_name, num_labels=len(id2label), id2label=id2label, label2id=label2id).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     
     return model, tokenizer
 
 def train_crf_bert(data_path, model_name):
-    if CRF is None:
+    if _CRF is None:
         raise ModuleNotFoundError("torchcrf is required to train CRF-BERT models.")
+
+    import torch
+    from datasets import Dataset
+    from torch.optim import AdamW
+    from torch.utils.data import DataLoader
+    from transformers import DataCollatorForTokenClassification, get_scheduler
 
     label_list = [
         'O',
@@ -250,7 +247,7 @@ def train_crf_bert(data_path, model_name):
         tokenized_dataset, shuffle=True, batch_size=2, collate_fn=data_collator
     )
 
-    crf = CRF(len(id2label), batch_first=True).to(device)
+    crf = _CRF(len(id2label), batch_first=True).to(device)
 
     optimizer = AdamW(list(model.parameters()) + list(crf.parameters()), lr=5e-5)
 

@@ -2,12 +2,12 @@
 Backward-compatible shim for entity normalization helpers.
 
 Source of truth:
-- normalize node: src.url_exchanger.node
-- utility functions: src.url_exchanger.tools
+- normalize node: src.node
+- utility functions: src.tools.slices.url_exchanger
 """
 
-from .node import normalize_and_validate_entities as normalize_and_validate_entities_node
-from .tools import (
+from src.node import normalize_and_validate_entities as normalize_and_validate_entities_node
+from src.tools.slices.url_exchanger import (
     check_missing_entities,
     generate_missing_message,
     load_synonym_dict,
