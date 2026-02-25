@@ -39,8 +39,14 @@ class GraphState(TypedDict, total=False):
     job_metadata_list: list[dict[str, object]]
 
     # retrieval
+    # 검색 옵션 키를 state에 고정해 노드가 dict 키 문자열에 의존하지 않게 한다.
     retriever: object
     precomputed_doc_embeddings: object
+    retrieval_top_k: int
+    retrieval_combination_method: str
+    retrieval_use_query_expansion: bool
+    retrieval_bm25_weight: float
+    retrieval_embedding_weight: float
     retrieved_job_info_list: list[str]
     retrieved_scores: list[float]
 

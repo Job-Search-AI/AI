@@ -14,6 +14,8 @@ from .slices import (
     ParsingState,
     PredictCrfBertState,
     PredictCrfBertResultState,
+    # 상위 패키지에서도 retrieval 옵션 타입을 바로 import 할 수 있게 노출한다.
+    RetrievalOptionState,
     RetrievalState,
     SessionState,
     SingletonModelCache,
@@ -31,6 +33,7 @@ __all__ = [
     "CrawlingState",
     "ParsingState",
     "RetrievalState",
+    "RetrievalOptionState",
     "LlmState",
     "SingletonModelCache",
     "get_model_cache",

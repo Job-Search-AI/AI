@@ -173,58 +173,35 @@ def search_hybrid_retriever(
     combination_method: str = "weighted_average",
     use_query_expansion: bool = True,
 ) -> tuple[list[str], list[float]]:
-    _ensure_indexed(context)
+    _ensure_indexed(context)  # 인덱스가 준비되었는지 검사
+    if not query.strip(): return [], []
 
-    if not query.strip():
-        return [], []
-
+    # 쿼리 확장 적용 여부에 따라 검색어 결정
     if use_query_expansion:
         expanded_query = context["query_processor"].get_expanded_query_string(query)
         search_query = expanded_query if expanded_query.strip() else query
     else:
         search_query = query
 
-    print(f"원본 쿼리: {query}")
-    if use_query_expansion and search_query != query:
-        print(f"확장된 쿼리: {search_query}")
+    # BM25 검색 실행 (top_k * 2 개까지)
+    bm25_docs, bm25_scores = context["bm25_retriever"].search(search_query, top_k=top_k * 2)
 
-    try:
-        bm25_docs, bm25_scores = context["bm25_retriever"].search(search_query, top_k=top_k * 2)
-    except Exception as exc:
-        print(f"BM25 검색 오류: {exc}")
-        bm25_docs, bm25_scores = [], []
+    # 임베딩 기반 유사도 검색 실행
+    embedding_docs, embedding_scores = similarity_docs_retrieval(
+        search_query,
+        context["documents"],
+        precomputed_doc_embeddings=context["document_embeddings"],
+    )
+    embedding_docs = embedding_docs[: top_k * 2]
+    embedding_scores = embedding_scores[: top_k * 2]
 
-    try:
-        embedding_docs, embedding_scores = similarity_docs_retrieval(
-            search_query,
-            context["documents"],
-            precomputed_doc_embeddings=context["document_embeddings"],
-        )
-        embedding_docs = embedding_docs[: top_k * 2]
-        embedding_scores = embedding_scores[: top_k * 2]
-    except Exception as exc:
-        print(f"임베딩 검색 오류: {exc}")
-        embedding_docs, embedding_scores = [], []
-
+    # 결합 방식에 따라 최종 결과 생성
     if combination_method == "weighted_average":
-        return _combine_weighted_average(
-            context,
-            bm25_docs,
-            bm25_scores,
-            embedding_docs,
-            embedding_scores,
-            top_k,
-        )
-    if combination_method == "rrf":
-        return _combine_rrf(
-            context,
-            bm25_docs,
-            bm25_scores,
-            embedding_docs,
-            embedding_scores,
-            top_k,
-        )
-    raise ValueError(f"지원하지 않는 결합 방법: {combination_method}")
+        return _combine_weighted_average(context, bm25_docs, bm25_scores, embedding_docs, embedding_scores, top_k)
+    elif combination_method == "rrf":
+        return _combine_rrf(context, bm25_docs, bm25_scores, embedding_docs, embedding_scores, top_k)
+    else:
+        raise ValueError(f"지원하지 않는 결합 방법: {combination_method}")
 
 
 def set_hybrid_weights(

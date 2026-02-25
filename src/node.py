@@ -14,10 +14,7 @@ from src.state import (
 )
 from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
 from src.tools.slices.parsing import parsing_job_info as _parsing_job_info_tool
-from src.tools.slices.retrieval import (
-    build_hybrid_retriever as _build_hybrid_retriever_tool,
-    search_hybrid_retriever as _search_hybrid_retriever_tool,
-)
+from src.tools.slices.retrieval import search_hybrid_retriever as _search_hybrid_retriever_tool
 from src.tools.slices.llm import generate_response
 from src.tools.slices.singleton_model import DEFAULT_BERT_MODEL_NAME, ensure_model_cache
 from src.tools.slices.entity_normalizer import (
@@ -25,7 +22,6 @@ from src.tools.slices.entity_normalizer import (
     generate_missing_message,
     normalize_entities,
 )
-from src.utils import dict_to_str
 
 
 def singleton_model_node(state: GraphState) -> SingletonModelNodeUpdate:
@@ -227,47 +223,38 @@ def parse_job_info_node(state: GraphState) -> ParsingState:
     return {"job_info_list": parsed_list}
 
 
-def similarity_docs_retrieval(state: GraphState) -> RetrievalState:
+def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
+    # 검색 노드는 쿼리/문서/옵션을 모아 tools의 최상위 검색 함수에 그대로 위임한다.
     query = state.get("query")
     raw_documents = state.get("job_info_list")
     retriever = state.get("retriever")
+    top_k = state.get("retrieval_top_k")
+    combination_method = state.get("retrieval_combination_method", "weighted_average")
+    use_query_expansion = state.get("retrieval_use_query_expansion", True)
+    bm25_weight = state.get("retrieval_bm25_weight", 0.5)
+    embedding_weight = state.get("retrieval_embedding_weight", 0.5)
 
-    if not isinstance(query, str) or not query.strip():
-        raise ValueError("state['query'] must be a non-empty string")
-    if not isinstance(raw_documents, list):
-        raise ValueError("state['job_info_list'] must be a list")
-
-    documents = dict_to_str(raw_documents)
-    if not documents:
-        return {
-            "retriever": retriever,
-            "retrieved_job_info_list": [],
-            "retrieved_scores": [],
-        }
-
-    needs_rebuild = True
-    if isinstance(retriever, dict):
-        cached_documents = retriever.get("documents")
-        if retriever.get("is_indexed", False) and isinstance(cached_documents, list):
-            needs_rebuild = cached_documents != documents
-
-    if needs_rebuild:
-        retriever = _build_hybrid_retriever_tool(documents)
-
-    top_k = len(documents)
-    retrieved_docs, retrieved_scores = _search_hybrid_retriever_tool(
-        context=retriever,
+    # state 검증은 tools에서 수행하므로 노드는 옵션 전달과 반환 포맷 유지에 집중한다.
+    result = _search_hybrid_retriever_tool(
         query=query,
+        documents=raw_documents,
+        retriever=retriever,
         top_k=top_k,
-        combination_method="weighted_average",
-        use_query_expansion=True,
+        combination_method=combination_method,
+        use_query_expansion=use_query_expansion,
+        bm25_weight=bm25_weight,
+        embedding_weight=embedding_weight,
     )
-
     return {
-        "retriever": retriever,
-        "retrieved_job_info_list": retrieved_docs,
-        "retrieved_scores": retrieved_scores,
+        "retriever": result["retriever"],
+        "retrieved_job_info_list": result["retrieved_job_info_list"],
+        "retrieved_scores": result["retrieved_scores"],
     }
+
+
+def similarity_docs_retrieval(state: GraphState) -> RetrievalState:
+    # 기존 공개 함수명 호환을 위해 새 검색 노드로 그대로 위임한다.
+    return search_hybrid_retriever_node(state)
 
 
 def generate_user_response_node(state: GraphState) -> dict[str, str]:
@@ -299,6 +286,7 @@ __all__ = [
     "mapping_url_query_node",
     "crawl_job_html_from_saramin",
     "parse_job_info_node",
+    "search_hybrid_retriever_node",
     "similarity_docs_retrieval",
     "generate_user_response_node",
 ]
