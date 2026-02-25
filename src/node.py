@@ -7,11 +7,13 @@ from src.state import (
     NormalizeAndValidateEntitiesResultState,
     NormalizeAndValidateEntitiesState,
     NormalizeEntityInputState,
+    ParsingState,
     PredictCrfBertResultState,
     RetrievalState,
     SingletonModelNodeUpdate,
 )
 from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
+from src.tools.slices.parsing import parsing_job_info as _parsing_job_info_tool
 from src.tools.slices.retrieval import (
     build_hybrid_retriever as _build_hybrid_retriever_tool,
     search_hybrid_retriever as _search_hybrid_retriever_tool,
@@ -214,6 +216,17 @@ def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
     }
 
 
+def parse_job_info_node(state: GraphState) -> ParsingState:
+    # 파싱 노드는 크롤링 단계 결과(html_contents)를 받아 문자열 리스트로 변환한다.
+    html_contents = state.get("html_contents")
+    if not isinstance(html_contents, list):
+        raise ValueError("state['html_contents'] must be a list")
+
+    # 파싱 로직은 tools 레이어를 단일 진입점으로 써서 재사용 경로를 통일한다.
+    parsed_list = _parsing_job_info_tool(html_contents)
+    return {"job_info_list": parsed_list}
+
+
 def similarity_docs_retrieval(state: GraphState) -> RetrievalState:
     query = state.get("query")
     raw_documents = state.get("job_info_list")
@@ -285,6 +298,7 @@ __all__ = [
     "normalize_and_validate_entities",
     "mapping_url_query_node",
     "crawl_job_html_from_saramin",
+    "parse_job_info_node",
     "similarity_docs_retrieval",
     "generate_user_response_node",
 ]
