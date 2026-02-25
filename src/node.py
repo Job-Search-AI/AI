@@ -10,17 +10,19 @@ from src.state import (
     RetrievalState,
     SingletonModelNodeUpdate,
 )
-from src.crawling.tools import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
-from src.tools.slices.embedding import (
-    similarity_docs_retrieval as _similarity_docs_retrieval_tool,
+from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
+from src.tools.slices.retrieval import (
+    build_hybrid_retriever as _build_hybrid_retriever_tool,
+    search_hybrid_retriever as _search_hybrid_retriever_tool,
 )
 from src.tools.slices.llm import generate_response
 from src.tools.slices.singleton_model import DEFAULT_BERT_MODEL_NAME, ensure_model_cache
-from src.tools.slices.url_exchanger import (
+from src.tools.slices.entity_normalizer import (
     check_missing_entities,
     generate_missing_message,
     normalize_entities,
 )
+from src.utils import dict_to_str
 
 
 def singleton_model_node(state: GraphState) -> SingletonModelNodeUpdate:
@@ -171,25 +173,42 @@ def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
 
 def similarity_docs_retrieval(state: GraphState) -> RetrievalState:
     query = state.get("query")
-    documents = state.get("job_info_list")
-    embedding_model = state.get("embedding_model")
-    precomputed_doc_embeddings = state.get("precomputed_doc_embeddings")
+    raw_documents = state.get("job_info_list")
+    retriever = state.get("retriever")
 
     if not isinstance(query, str) or not query.strip():
         raise ValueError("state['query'] must be a non-empty string")
-    if not isinstance(documents, list):
+    if not isinstance(raw_documents, list):
         raise ValueError("state['job_info_list'] must be a list")
-    if embedding_model is None:
-        raise ValueError("state must include 'embedding_model'")
 
-    retrieved_docs, retrieved_scores = _similarity_docs_retrieval_tool(
+    documents = dict_to_str(raw_documents)
+    if not documents:
+        return {
+            "retriever": retriever,
+            "retrieved_job_info_list": [],
+            "retrieved_scores": [],
+        }
+
+    needs_rebuild = True
+    if isinstance(retriever, dict):
+        cached_documents = retriever.get("documents")
+        if retriever.get("is_indexed", False) and isinstance(cached_documents, list):
+            needs_rebuild = cached_documents != documents
+
+    if needs_rebuild:
+        retriever = _build_hybrid_retriever_tool(documents)
+
+    top_k = len(documents)
+    retrieved_docs, retrieved_scores = _search_hybrid_retriever_tool(
+        context=retriever,
         query=query,
-        documents=documents,
-        embedding_model=embedding_model,
-        precomputed_doc_embeddings=precomputed_doc_embeddings,
+        top_k=top_k,
+        combination_method="weighted_average",
+        use_query_expansion=True,
     )
 
     return {
+        "retriever": retriever,
         "retrieved_job_info_list": retrieved_docs,
         "retrieved_scores": retrieved_scores,
     }

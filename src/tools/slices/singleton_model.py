@@ -44,7 +44,7 @@ def _ensure_ner_loaded(bert_model_name: str = DEFAULT_BERT_MODEL_NAME) -> None:
             return
 
         try:
-            from src.tools.slices.url_exchanger import build_tag_map, get_bert_model_tokenizer
+            from src.tools.slices.bert_crf import build_tag_map, get_bert_model_tokenizer
             from torchcrf import CRF
 
             label2id, id2label = build_tag_map(NER_LABELS)
