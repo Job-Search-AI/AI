@@ -8,6 +8,4 @@ __all__ = [
     "retrieval",
     "search",
     "singleton_model",
-    "url_exchanger",
-    "url_mapper",
 ]

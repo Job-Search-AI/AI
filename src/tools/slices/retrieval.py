@@ -1,19 +1,20 @@
-from src.retrieval import BM25Retriever, HybridRetriever, QueryProcessor
-
-
-def build_hybrid_retriever(
-    documents: list[str],
-    bm25_weight: float = 0.6,
-    embedding_weight: float = 0.4,
-) -> HybridRetriever:
-    retriever = HybridRetriever(bm25_weight=bm25_weight, embedding_weight=embedding_weight)
-    retriever.build_index(documents)
-    return retriever
+from src.retrieval import (
+    BM25Retriever,
+    QueryProcessor,
+    build_hybrid_retriever,
+    get_hybrid_component_results,
+    get_hybrid_statistics,
+    search_hybrid_retriever,
+    set_hybrid_weights,
+)
 
 
 __all__ = [
     "QueryProcessor",
     "BM25Retriever",
-    "HybridRetriever",
     "build_hybrid_retriever",
+    "search_hybrid_retriever",
+    "set_hybrid_weights",
+    "get_hybrid_component_results",
+    "get_hybrid_statistics",
 ]

@@ -24,13 +24,15 @@ def parsing_job_info(*args, **kwargs):
 
 
 def predict_crf_bert(*args, **kwargs):
-    from .url_exchanger.bert_crf import predict_crf_bert as _fn
+    # url_exchanger 경로를 제거하고 분리된 bert_crf 패키지로 직접 연결한다.
+    from .bert_crf.bert_crf import predict_crf_bert as _fn
 
     return _fn(*args, **kwargs)
 
 
 def normalize_and_validate_entities(*args, **kwargs):
-    from .url_exchanger.entity_normalizer import normalize_and_validate_entities as _fn
+    # 엔티티 정규화 모듈도 분리된 패키지 경로로 연결한다.
+    from .entity_normalizer.entity_normalizer import normalize_and_validate_entities as _fn
 
     return _fn(*args, **kwargs)
 
@@ -42,7 +44,8 @@ def keep_loading_job_model(*args, **kwargs):
 
 
 def mapping_url_query(*args, **kwargs):
-    from .url_exchanger.url_mapper import mapping_url_query as _fn
+    # URL 매퍼는 새 패키지에서 lazy import 하여 기존 공개 API를 유지한다.
+    from .url_mapper.url_mapper import mapping_url_query as _fn
 
     return _fn(*args, **kwargs)
 

@@ -9,7 +9,12 @@ import torch
 
 sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
-from src.retrieval.hybrid_retriever import HybridRetriever
+from src.retrieval.hybrid_retriever import (
+    build_hybrid_retriever,
+    get_hybrid_component_results,
+    get_hybrid_statistics,
+    search_hybrid_retriever,
+)
 from src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
 from collections import defaultdict
 
@@ -60,18 +65,17 @@ def test_hybrid_retrieval():
     
     # 하이브리드 검색기 초기화 및 인덱스 구축
     print("\n2. 하이브리드 검색기 초기화...")
-    hybrid_retriever = HybridRetriever(
-        bm25_weight=0.4,
-        embedding_weight=0.6
-    )
-    
     start_time = time.time()
-    hybrid_retriever.build_index(job_data_strings)
+    retriever_context = build_hybrid_retriever(
+        job_data_strings,
+        bm25_weight=0.4,
+        embedding_weight=0.6,
+    )
     index_time = time.time() - start_time
     print(f"인덱스 구축 시간: {index_time:.2f}초")
     
     # 검색기 통계 출력
-    stats = hybrid_retriever.get_statistics()
+    stats = get_hybrid_statistics(retriever_context)
     print(f"\n검색기 통계:")
     print(f"- 문서 수: {stats['num_documents']}")
     print(f"- BM25 가중치: {stats['weights']['bm25']:.2f}")
@@ -114,7 +118,8 @@ def test_hybrid_retrieval():
         
         # 하이브리드 검색 수행
         start_time = time.time()
-        retrieved_docs, scores = hybrid_retriever.search(
+        retrieved_docs, scores = search_hybrid_retriever(
+            retriever_context,
             query, 
             top_k=10, 
             combination_method="weighted_average",
@@ -179,8 +184,7 @@ def compare_methods():
     job_data_strings = docs_to_strings(job_data)
     
     # 하이브리드 검색기 초기화
-    hybrid_retriever = HybridRetriever()
-    hybrid_retriever.build_index(job_data_strings)
+    retriever_context = build_hybrid_retriever(job_data_strings)
     
     # 테스트 쿼리
     test_queries = [
@@ -194,7 +198,11 @@ def compare_methods():
         print("-" * 50)
         
         # 구성 요소별 결과 확인
-        component_results = hybrid_retriever.get_component_results(query, top_k=5)
+        component_results = get_hybrid_component_results(
+            retriever_context,
+            query,
+            top_k=5,
+        )
         
         print(f"확장된 쿼리: {component_results['expanded_query']}")
         
@@ -209,7 +217,11 @@ def compare_methods():
             print(f"  {i+1}. (점수: {score:.4f}) {doc[:100]}...")
         
         # 하이브리드 결과
-        hybrid_docs, hybrid_scores = hybrid_retriever.search(query, top_k=5)
+        hybrid_docs, hybrid_scores = search_hybrid_retriever(
+            retriever_context,
+            query,
+            top_k=5,
+        )
         print("\n하이브리드 상위 5개 결과:")
         for i, (doc, score) in enumerate(zip(hybrid_docs, hybrid_scores)):
             print(f"  {i+1}. (점수: {score:.4f}) {doc[:100]}...")

@@ -1,3 +1,4 @@
+import json
 import os
 
 from src.state import (
@@ -155,6 +156,48 @@ def normalize_and_validate_entities(
     }
 
 
+def mapping_url_query_node(state: GraphState) -> dict[str, str]:
+    # normalize 단계 결과를 그대로 이어받아 URL 생성만 담당한다.
+    normalized_entities = state.get("normalized_entities")
+    if not isinstance(normalized_entities, dict):
+        raise ValueError("state['normalized_entities'] must be a dict")
+
+    # URL 매핑은 4개 슬롯이 모두 채워져 있어야 하므로 None/누락 여부를 먼저 검증한다.
+    required_fields = ("지역", "직무", "경력", "학력")
+    invalid_fields = [
+        field
+        for field in required_fields
+        if field not in normalized_entities or normalized_entities.get(field) is None
+    ]
+    if invalid_fields:
+        raise ValueError(
+            "state['normalized_entities'] must include non-null values for: "
+            + ", ".join(invalid_fields)
+        )
+
+    # 기존 계약을 유지하기 위해 동일한 query_map 경로(data/url_exchager)를 사용한다.
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    query_map_path = os.path.join(root_path, "data", "url_exchager", "query_map.json")
+
+    # query_map을 읽은 뒤 슬롯별 코드를 순서대로 이어 붙여 사람인 검색 URL을 만든다.
+    with open(query_map_path, "r", encoding="utf-8") as f:
+        query_map_data = json.load(f)
+
+    url_base = "https://www.saramin.co.kr/zf_user/search?searchType=search?"
+    for idx, (key, value) in enumerate(normalized_entities.items()):
+        mapped = query_map_data[key][value]
+        if idx == 0:
+            url_base += mapped
+        else:
+            url_base += "&" + mapped
+
+    # 기존 동작과 동일하게 학력/경력 무관 옵션을 마지막에 덧붙인다.
+    url_base += "&edu_none=y&exp_none=y"
+    return {"url": url_base}
+
+
 def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
     url = state.get("url")
     max_jobs = state.get("max_jobs", 50)
@@ -240,6 +283,7 @@ __all__ = [
     "singleton_model_node",
     "predict_crf_bert",
     "normalize_and_validate_entities",
+    "mapping_url_query_node",
     "crawl_job_html_from_saramin",
     "similarity_docs_retrieval",
     "generate_user_response_node",
