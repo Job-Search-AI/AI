@@ -40,6 +40,7 @@ class GraphState(TypedDict, total=False):
 
     # retrieval
     retriever: object
+    precomputed_doc_embeddings: object
     retrieved_job_info_list: list[str]
     retrieved_scores: list[float]
 
