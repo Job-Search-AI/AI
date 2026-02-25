@@ -252,11 +252,6 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
     }
 
 
-def similarity_docs_retrieval(state: GraphState) -> RetrievalState:
-    # 기존 공개 함수명 호환을 위해 새 검색 노드로 그대로 위임한다.
-    return search_hybrid_retriever_node(state)
-
-
 def generate_user_response_node(state: GraphState) -> dict[str, str]:
     query = state.get("query")
     retrieved_docs = state.get("retrieved_job_info_list")
@@ -287,6 +282,5 @@ __all__ = [
     "crawl_job_html_from_saramin",
     "parse_job_info_node",
     "search_hybrid_retriever_node",
-    "similarity_docs_retrieval",
     "generate_user_response_node",
 ]
