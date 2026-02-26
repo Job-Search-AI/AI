@@ -132,7 +132,8 @@ def normalize_and_validate_entities(
     base_dir = os.getenv("JOB_SEARCH_ROOT")
     if not base_dir:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    synonym_dict_path = os.path.join(base_dir, "data", "url_exchanger", "synonym_dict.json")
+    # 실제 데이터 디렉토리명(url_exchager)에 맞춰 경로를 고정해 실행 시 파일 누락을 막는다.
+    synonym_dict_path = os.path.join(base_dir, "data", "url_exchager", "synonym_dict.json")
 
     normalized_entities = normalize_entities(entity_dict, synonym_dict_path)
     missing_fields = check_missing_entities(normalized_entities)
