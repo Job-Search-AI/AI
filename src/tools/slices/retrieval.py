@@ -1,14 +1,15 @@
 from typing import Any
 
-from src.retrieval import BM25Retriever, QueryProcessor
-from src.retrieval.hybrid_retriever import (
+# 검색 구현도 tools 내부 패키지로 이동해 src 비핵심 경로 의존을 제거한다.
+from src.tools.retrieval import BM25Retriever, QueryProcessor
+from src.tools.retrieval.hybrid_retriever import (
     build_hybrid_retriever as _build_hybrid_retriever,
     get_hybrid_component_results,
     get_hybrid_statistics,
     search_hybrid_retriever as _search_hybrid_retriever_core,
     set_hybrid_weights as _set_hybrid_weights,
 )
-from src.utils import dict_to_str
+from src.tools.utils.str_generator import dict_to_str
 
 
 def _validate_search_inputs(

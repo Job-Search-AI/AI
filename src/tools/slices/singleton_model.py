@@ -1,7 +1,8 @@
 import threading
 from typing import Any, Callable
 
-from src.singletone_model.state import get_model_cache
+# 모델 캐시는 state의 단일 소스를 재사용해 중복 캐시 객체 생성을 막는다.
+from src.state.slices.singleton_model import get_model_cache
 
 DEFAULT_BERT_MODEL_NAME = "klue/bert-base"
 NER_LABELS = ["O", "B-JOB", "I-JOB", "B-CAR", "I-CAR", "B-EDU", "I-EDU", "B-LOC", "I-LOC"]
@@ -15,7 +16,7 @@ def get_device() -> str:
         with _CACHE_LOCK:
             if cache["device"] is None:
                 try:
-                    from src.utils.device_selector import get_device as _get_device
+                    from src.tools.utils.device_selector import get_device as _get_device
 
                     cache["device"] = _get_device()
                 except Exception as exc:
@@ -85,7 +86,7 @@ def get_embedding_model() -> Any:
         with _CACHE_LOCK:
             if cache["embedding_model"] is None:
                 try:
-                    from src.embedding.model import get_model
+                    from src.tools.embedding.model import get_model
 
                     cache["embedding_model"] = get_model()
                 except Exception as exc:
@@ -100,7 +101,7 @@ def get_llm() -> Callable[..., Any]:
         with _CACHE_LOCK:
             if cache["llm"] is None:
                 try:
-                    from src.llm.generator import generate_response
+                    from src.tools.llm.generator import generate_response
 
                     cache["llm"] = generate_response
                 except Exception as exc:

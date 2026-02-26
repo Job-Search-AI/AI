@@ -1,14 +1,15 @@
 from bs4 import BeautifulSoup
 
-from src.parsing.applicant_stats import parse_applicant_stats_text
-from src.parsing.benefit import parse_benefit_text
-from src.parsing.company_info import parse_company_info_text
-from src.parsing.howto import parse_howto_text
-from src.parsing.job_detail import parse_job_detail_text
-from src.parsing.location import parse_location_text
-from src.parsing.metadata_converter import convert_html_list_to_metadata_list
-from src.parsing.summary import parse_summary_text
-from src.parsing.title import parse_title_text
+# 코어 경로를 tools로 고정하기 위해 파싱 의존을 src.tools.parsing 내부 구현으로 모은다.
+from src.tools.parsing.applicant_stats import parse_applicant_stats_text
+from src.tools.parsing.benefit import parse_benefit_text
+from src.tools.parsing.company_info import parse_company_info_text
+from src.tools.parsing.howto import parse_howto_text
+from src.tools.parsing.job_detail import parse_job_detail_text
+from src.tools.parsing.location import parse_location_text
+from src.tools.parsing.metadata_converter import convert_html_list_to_metadata_list
+from src.tools.parsing.summary import parse_summary_text
+from src.tools.parsing.title import parse_title_text
 
 
 def _build_parsed_text(html_content: str) -> str:

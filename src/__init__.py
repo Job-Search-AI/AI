@@ -1,24 +1,25 @@
 
 def crawl_job_html_from_saramin(*args, **kwargs):
-    from .crawling.job_crawler import crawl_job_html_from_saramin as _fn
+    # src 표면을 최소화하기 위해 공개 API도 tools 레이어로 직접 연결한다.
+    from src.tools.slices.crawling import crawl_job_html_from_saramin as _fn
 
     return _fn(*args, **kwargs)
 
 
 def similarity_docs_retrieval(*args, **kwargs):
-    from .embedding.model import similarity_docs_retrieval as _fn
+    from src.tools.embedding.model import similarity_docs_retrieval as _fn
 
     return _fn(*args, **kwargs)
 
 
 def generate_response(*args, **kwargs):
-    from .llm.generator import generate_response as _fn
+    from src.tools.llm.generator import generate_response as _fn
 
     return _fn(*args, **kwargs)
 
 
 def parsing_job_info(*args, **kwargs):
-    from .parsing.main import parsing_job_info as _fn
+    from src.tools.parsing.main import parsing_job_info as _fn
 
     return _fn(*args, **kwargs)
 

@@ -1,6 +1,7 @@
 from typing import Any
 
-from src.utils import dict_to_str
+# 문자열 변환 유틸도 tools 내부로 통일해 코어 외부 의존을 없앤다.
+from src.tools.utils.str_generator import dict_to_str
 
 
 def similarity_docs_retrieval(
