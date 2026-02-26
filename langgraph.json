@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "job_search": "./src/graph.py:get_compiled_graph"
+  },
+  "env": ".env"
+}

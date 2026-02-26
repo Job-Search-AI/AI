@@ -25,6 +25,7 @@ dependencies = [
   "tqdm",
   "transformers",
   "uvicorn[standard]",
+  "webdriver-manager",
 ]
 
 [project.optional-dependencies]
@@ -45,6 +46,7 @@ llm-serving = [
 
 [dependency-groups]
 dev = [
+    "langgraph-cli[inmem]>=0.4.12",
     "langgraph-sdk>=0.3.8",
     "langsmith>=0.7.5",
 ]
