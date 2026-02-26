@@ -5,12 +5,13 @@ from typing import Optional
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-from config import PROMPT
+from legacy.api.config import PROMPT
 
 _model = None
 _tokenizer = None
 _device = None
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# legacy/src/url_exchanger 기준으로 프로젝트 루트는 세 단계 상위이므로 경로를 이동 후 기준으로 보정한다.
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 QUERY_MAP_PATH = os.path.join(PROJECT_ROOT, "data", "url_exchager", "query_map.json")
 
 def init_model(model_name="skt/A.X-4.0-Light"):

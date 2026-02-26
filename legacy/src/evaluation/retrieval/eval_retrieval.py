@@ -6,7 +6,8 @@ import torch
 sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
 from src.embedding.model import similarity_docs_retrieval, get_model
-from src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
+# 평가 스크립트도 legacy로 이동했으므로 내부 metrics import를 새 경로로 맞춘다.
+from legacy.src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
 
 from collections import defaultdict, deque
 from typing import List, Dict, Any

@@ -15,7 +15,8 @@ from src.retrieval.hybrid_retriever import (
     get_hybrid_statistics,
     search_hybrid_retriever,
 )
-from src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
+# 레거시 테스트 스크립트는 분리된 evaluation metrics를 직접 참조하도록 경로를 맞춘다.
+from legacy.src.evaluation.retrieval.metrics import recall_at_k, precision_at_k, hit_at_k
 from collections import defaultdict
 
 
