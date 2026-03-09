@@ -1,5 +1,8 @@
 import threading
+import os
 from typing import Any, Callable
+
+from dotenv import load_dotenv
 
 # 모델 캐시는 state의 단일 소스를 재사용해 중복 캐시 객체 생성을 막는다.
 from src.state.slices.singleton_model import get_model_cache
@@ -114,10 +117,17 @@ def get_llm() -> Callable[..., Any]:
 
 
 def ensure_model_cache(bert_model_name: str = DEFAULT_BERT_MODEL_NAME) -> dict:
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+    load_dotenv(os.path.join(root_path, ".env"))
+
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
     get_device()
-    get_bert_model(bert_model_name)
-    get_tokenizer(bert_model_name)
-    get_crf(bert_model_name)
+    if not use_openai:
+        get_bert_model(bert_model_name)
+        get_tokenizer(bert_model_name)
+        get_crf(bert_model_name)
     get_embedding_model()
     get_llm()
     return get_model_cache()
