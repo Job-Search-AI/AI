@@ -1,0 +1,9 @@
+*.pyc
+.env
+cache/
+__pycache__/
+test/
+tests/
+src/url_exchanger/checkpoint/
+tech_spec_docs/
+AGENTS.md
