@@ -27,9 +27,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
         "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
     )
 
-    # ChromeDriver 자동 설치 및 WebDriver 초기화
-    chrome_driver_path = "/usr/bin/chromedriver"  # 설치된 경로 확인 필요
-    service = Service(chrome_driver_path)
+    # ChromeDriver 자동 설치 경로 사용
     driver = webdriver.Chrome(service=service, options=chrome_options)
     print("셀레니움 초기화 완료")
     # 수집된 상세 HTML 조각들을 저장할 리스트 (항상 리스트 반환을 위해 상단에서 초기화)
