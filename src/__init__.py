@@ -24,6 +24,12 @@ def parsing_job_info(*args, **kwargs):
     return _fn(*args, **kwargs)
 
 
+def predict_ner(*args, **kwargs):
+    from src.node import predict_ner as _fn
+
+    return _fn(*args, **kwargs)
+
+
 def predict_crf_bert(*args, **kwargs):
     # 레거시 모듈을 legacy 패키지로 옮겼지만 공개 API는 유지해야 하므로 lazy import만 경로를 바꾼다.
     from legacy.src.bert_crf.bert_crf import predict_crf_bert as _fn
@@ -57,6 +63,7 @@ __all__ = [
     "similarity_docs_retrieval",
     "generate_response",
     "parsing_job_info",
+    "predict_ner",
     "predict_crf_bert",
     "normalize_and_validate_entities",
     "keep_loading_job_model",

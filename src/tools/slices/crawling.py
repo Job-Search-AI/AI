@@ -1,6 +1,6 @@
+import os
 import time
 
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -14,10 +14,10 @@ def crawl_job_html_from_saramin(url, max_count=None):
     url: 사용자 조건을 적용한 url
     max_count: 크롤링 데이터 개수
     """
-    service = Service(ChromeDriverManager().install())
     # Chrome 옵션 설정
     print("셀레니움 초기화 시작...")
     chrome_options = webdriver.ChromeOptions()
+    chrome_options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/chromium")
     chrome_options.add_argument("--headless")  # 헤드리스 모드 (브라우저 창 숨김)
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -27,9 +27,8 @@ def crawl_job_html_from_saramin(url, max_count=None):
         "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
     )
 
-    # ChromeDriver 자동 설치 및 WebDriver 초기화
-    chrome_driver_path = "/usr/bin/chromedriver"  # 설치된 경로 확인 필요
-    service = Service(chrome_driver_path)
+    # 시스템에 설치된 chromedriver를 명시해 selenium manager 의존을 피한다.
+    service = Service(os.getenv("CHROMEDRIVER_BIN", "/usr/bin/chromedriver"))
     driver = webdriver.Chrome(service=service, options=chrome_options)
     print("셀레니움 초기화 완료")
     # 수집된 상세 HTML 조각들을 저장할 리스트 (항상 리스트 반환을 위해 상단에서 초기화)

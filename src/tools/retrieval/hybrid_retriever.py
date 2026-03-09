@@ -137,6 +137,7 @@ def build_hybrid_retriever(
     documents: list[str],
     bm25_weight: float = 0.5,
     embedding_weight: float = 0.5,
+    use_openai: bool = False,
     k1: float = 1.5,
     b: float = 0.75,
 ) -> dict[str, Any]:
@@ -149,8 +150,13 @@ def build_hybrid_retriever(
     bm25_retriever.build_index(documents)
 
     print("2. 임베딩 모델 로드 및 문서 임베딩 계산...")
-    embedding_model = get_model()
-    document_embeddings = embedding_model.encode(documents, batch_size=2)
+    embedding_model = get_model(use_openai=use_openai)
+    if use_openai:
+        document_embeddings = embedding_model.embed_documents(documents)
+        embedding_provider = "openai"
+    else:
+        document_embeddings = embedding_model.encode(documents, batch_size=2)
+        embedding_provider = "local"
 
     print("하이브리드 검색 인덱스 구축 완료")
     return {
@@ -164,6 +170,7 @@ def build_hybrid_retriever(
         "embedding_scaler": MinMaxScaler(),
         "is_indexed": True,
         "documents": list(documents),
+        "embedding_provider": embedding_provider,
     }
 
 
@@ -191,6 +198,7 @@ def search_hybrid_retriever(
     embedding_docs, embedding_scores = similarity_docs_retrieval(
         search_query,
         context["documents"],
+        embedding_model=context["embedding_model"],
         precomputed_doc_embeddings=context["document_embeddings"],
     )
     embedding_docs = embedding_docs[: top_k * 2]
@@ -238,6 +246,7 @@ def get_hybrid_component_results(
     embedding_docs, embedding_scores = similarity_docs_retrieval(
         expanded_query,
         context["documents"],
+        embedding_model=context["embedding_model"],
         precomputed_doc_embeddings=context["document_embeddings"],
     )
     embedding_docs = embedding_docs[:top_k]

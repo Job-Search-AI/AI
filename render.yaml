@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: jobsearchai
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: develop
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: USE_OPENAI_MODELS
+        value: "true"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: NER_MODEL_NAME
+        value: gpt-5-nano
+      - key: RESPONSE_MODEL_NAME
+        value: gpt-5-nano
+      - key: OPENAI_TIMEOUT_SECONDS
+        value: "180"
+      - key: OPENAI_MAX_RETRIES
+        value: "2"

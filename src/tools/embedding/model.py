@@ -1,6 +1,9 @@
-import torch
 import os
 import sys
+import numpy as np
+import torch
+from dotenv import load_dotenv
+from langchain_openai import OpenAIEmbeddings
 # python -m src.embedding.model
 
 # 이 파일을 단독으로 실행시킬시 아래의 두 주석을 풀고 실행시켜야 캐쉬저장된다.
@@ -15,9 +18,20 @@ from src.tools.utils.device_selector import get_device, print_device_info
 
 # 모델 캐시를 위한 전역 변수
 _model_cache = None
+_openai_cache = None
 
-def get_model():
-    global _model_cache
+def get_model(use_openai=False):
+    global _model_cache, _openai_cache
+
+    if use_openai:
+        if _openai_cache is None:
+            root_path = os.getenv("JOB_SEARCH_ROOT")
+            if not root_path:
+                root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+            load_dotenv(os.path.join(root_path, ".env"))
+            _openai_cache = OpenAIEmbeddings(model="text-embedding-3-small")
+        return _openai_cache
+
     if _model_cache is None:
         device = get_device()
         print_device_info(device)
@@ -27,7 +41,7 @@ def get_model():
         print('모델 로드 완료')
     return _model_cache
 
-def similarity_docs_retrieval(query, documents, precomputed_doc_embeddings=None):
+def similarity_docs_retrieval(query, documents, embedding_model, precomputed_doc_embeddings=None):
     """
     문서 유사도 검색 함수
     
@@ -44,32 +58,62 @@ def similarity_docs_retrieval(query, documents, precomputed_doc_embeddings=None)
 
     print('-'*10, '유사도 검색 시작', '-'*10)
     
-    model = get_model()
+    if embedding_model is None:
+        raise ValueError("embedding_model is required")
 
     print('documents를 문자열로 변환 시작')
     documents_for_embedding = dict_to_str(documents)
     print('documents를 문자열로 변환 완료')
 
-    # 임베딩 계산
-    print('임베딩 계산 시작')
-    query_embeddings = model.encode(query, prompt_name="query")
-    
-    if precomputed_doc_embeddings is not None:
-        document_embeddings = precomputed_doc_embeddings
-        print('미리 계산된 문서 임베딩 사용')
+    use_openai = hasattr(embedding_model, "embed_query") and hasattr(embedding_model, "embed_documents")
+    doc_score_pairs = []
+    if use_openai:
+        print('임베딩 계산 시작')
+        query_embeddings = embedding_model.embed_query(query)
+        if precomputed_doc_embeddings is not None:
+            document_embeddings = precomputed_doc_embeddings
+            print('미리 계산된 문서 임베딩 사용')
+        else:
+            document_embeddings = embedding_model.embed_documents(documents_for_embedding)
+        print('임베딩 계산 완료')
+
+        print('코사인 유사도 점수 계산 시작')
+        query_vec = np.array(query_embeddings, dtype=np.float32)
+        doc_vecs = np.array(document_embeddings, dtype=np.float32)
+        query_norm = float(np.linalg.norm(query_vec))
+
+        idx = 0
+        for document in documents_for_embedding:
+            doc_vec = doc_vecs[idx]
+            doc_norm = float(np.linalg.norm(doc_vec))
+            score = 0.0
+            denom = query_norm * doc_norm
+            if denom > 0:
+                score = float(np.dot(query_vec, doc_vec) / denom)
+            doc_score_pairs.append((document, score))
+            idx += 1
+        print('코사인 유사도 점수 계산 완료')
     else:
-        document_embeddings = model.encode(documents_for_embedding, batch_size=2)
-    print('임베딩 계산 완료')
+        print('임베딩 계산 시작')
+        query_embeddings = embedding_model.encode(query, prompt_name="query")
+        if precomputed_doc_embeddings is not None:
+            document_embeddings = precomputed_doc_embeddings
+            print('미리 계산된 문서 임베딩 사용')
+        else:
+            document_embeddings = embedding_model.encode(documents_for_embedding, batch_size=2)
+        print('임베딩 계산 완료')
 
-    # 코사인 유사도 점수 계산
-    print('코사인 유사도 점수 계산 시작')
-    scores = model.similarity(query_embeddings, document_embeddings)
-    print('코사인 유사도 점수 계산 완료')
+        print('코사인 유사도 점수 계산 시작')
+        scores = embedding_model.similarity(query_embeddings, document_embeddings)
+        print('코사인 유사도 점수 계산 완료')
 
-    # 문서와 유사도 점수 쌍 생성 및 정렬
+        idx = 0
+        for document in documents_for_embedding:
+            doc_score_pairs.append((document, float(scores[0][idx])))
+            idx += 1
+
     print('문서와 유사도 점수 쌍 생성 및 정렬 시작')
-    doc_score_pairs = list(zip(documents_for_embedding, scores[0]))
-    doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
+    doc_score_pairs = sorted(doc_score_pairs, key=lambda x: float(x[1]), reverse=True)
     print('문서와 유사도 점수 쌍 생성 및 정렬 완료')
 
     res_documents = []
@@ -77,7 +121,7 @@ def similarity_docs_retrieval(query, documents, precomputed_doc_embeddings=None)
     print('문서와 유사도 점수 쌍 출력 시작')
     for document, score in doc_score_pairs:
         res_documents.append(document)
-        res_scores.append(score)
+        res_scores.append(float(score))
         print(f"{score:.4f}: {document[:100]}...")
     print('문서와 유사도 점수 쌍 출력 완료')
 
@@ -115,4 +159,5 @@ if __name__ == '__main__':
         """,
     ]
 
-    doc_score_pairs = similarity_docs_retrieval(query, documents)
+    model = get_model(use_openai=False)
+    doc_score_pairs = similarity_docs_retrieval(query, documents, model)

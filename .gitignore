@@ -8,3 +8,5 @@ src/url_exchanger/checkpoint/
 tech_spec_docs/
 AGENTS.md
 .langgraph_api/
+.pytest_cache/
+.uv-cache/

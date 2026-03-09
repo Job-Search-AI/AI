@@ -1,6 +1,9 @@
 import json
 import os
 
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+
 from src.state import (
     CrawlingState,
     GraphState,
@@ -16,7 +19,11 @@ from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_
 from src.tools.slices.parsing import parsing_job_info as _parsing_job_info_tool
 from src.tools.slices.retrieval import search_hybrid_retriever as _search_hybrid_retriever_tool
 from src.tools.slices.llm import generate_response
-from src.tools.slices.singleton_model import DEFAULT_BERT_MODEL_NAME, ensure_model_cache
+from src.tools.slices.singleton_model import (
+    DEFAULT_BERT_MODEL_NAME,
+    ensure_model_cache,
+    get_model_cache,
+)
 from src.tools.slices.entity_normalizer import (
     check_missing_entities,
     generate_missing_message,
@@ -43,19 +50,93 @@ def singleton_model_node(state: GraphState) -> SingletonModelNodeUpdate:
     return update
 
 
-def predict_crf_bert(state: GraphState) -> PredictCrfBertResultState:
+def predict_ner(user_input: str) -> dict[str, str]:
     import torch
 
-    sentence = state.get("user_input")
-    model = state.get("bert_model")
-    crf = state.get("crf")
-    tokenizer = state.get("tokenizer")
-    device = state.get("device")
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    load_dotenv(os.path.join(root_path, ".env"))
 
-    if not isinstance(sentence, str):
-        raise ValueError("state['user_input'] must be a string")
+    if not isinstance(user_input, str):
+        raise ValueError("user_input must be a string")
+
+    entity = {
+        "지역": "",
+        "직무": "",
+        "경력": "",
+        "학력": "",
+    }
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
+
+    if use_openai:
+        timeout = os.getenv("OPENAI_TIMEOUT_SECONDS")
+        retries = os.getenv("OPENAI_MAX_RETRIES")
+        llm = ChatOpenAI(
+            model=os.getenv("NER_MODEL_NAME", "gpt-5-nano"),
+            timeout=float(timeout) if timeout else None,
+            max_retries=int(retries) if retries else None,
+        )
+        schema = {
+            "title": "ner",
+            "type": "object",
+            "properties": {
+                "지역": {
+                    "type": "string",
+                    "description": "사용자 문장에 있는 지역. 없으면 빈 문자열.",
+                },
+                "직무": {
+                    "type": "string",
+                    "description": "사용자 문장에 있는 직무. 없으면 빈 문자열.",
+                },
+                "경력": {
+                    "type": "string",
+                    "description": "사용자 문장에 있는 경력. 없으면 빈 문자열.",
+                },
+                "학력": {
+                    "type": "string",
+                    "description": "사용자 문장에 있는 학력. 없으면 빈 문자열.",
+                },
+            },
+            "required": ["지역", "직무", "경력", "학력"],
+            "additionalProperties": False,
+        }
+        prompt = "\n".join(
+            [
+                "사용자 문장에서 지역, 직무, 경력, 학력만 추출한다.",
+                "문장에 없는 값은 반드시 빈 문자열로 반환한다.",
+                "추론으로 값을 채우지 않는다.",
+                user_input,
+            ]
+        )
+        result = llm.with_structured_output(
+            schema,
+            method="json_schema",
+            strict=True,
+        ).invoke(prompt)
+
+        for key in entity:
+            value = result.get(key, "")
+            if isinstance(value, str):
+                entity[key] = value.strip()
+        return entity
+
+    cache = get_model_cache()
+    model = cache.get("bert_model")
+    crf = cache.get("crf")
+    tokenizer = cache.get("tokenizer")
+    device = cache.get("device")
+
     if model is None or crf is None or tokenizer is None or device is None:
-        raise ValueError("state must include bert_model, crf, tokenizer, device")
+        ensure_model_cache(DEFAULT_BERT_MODEL_NAME)
+        cache = get_model_cache()
+        model = cache.get("bert_model")
+        crf = cache.get("crf")
+        tokenizer = cache.get("tokenizer")
+        device = cache.get("device")
+
+    if model is None or crf is None or tokenizer is None or device is None:
+        raise ValueError("NER model cache is empty")
 
     label_to_slot = {
         "O": "O",
@@ -68,23 +149,19 @@ def predict_crf_bert(state: GraphState) -> PredictCrfBertResultState:
         "B-LOC": "지역",
         "I-LOC": "지역",
     }
-
-    tokenized_input = tokenizer(sentence, return_tensors="pt", truncation=True)
-    input_data = {k: v.to(device) for k, v in tokenized_input.items()}
+    tokenized_input = tokenizer(user_input, return_tensors="pt", truncation=True)
+    input_data = {}
+    for key, value in tokenized_input.items():
+        input_data[key] = value.to(device)
 
     with torch.no_grad():
         logits = model(**input_data).logits
         predictions = crf.decode(logits)[0]
-        predicted_token_class = [model.config.id2label[t] for t in predictions]
+        predicted_token_class = []
+        for token_id in predictions:
+            predicted_token_class.append(model.config.id2label[token_id])
 
     decode = tokenizer.convert_ids_to_tokens(tokenized_input["input_ids"][0])
-
-    entity: NormalizeEntityInputState = {
-        "직무": "",
-        "경력": "",
-        "학력": "",
-        "지역": "",
-    }
 
     for word, pred in zip(decode, predicted_token_class):
         cleaned_word = word.replace("#", "")
@@ -93,6 +170,15 @@ def predict_crf_bert(state: GraphState) -> PredictCrfBertResultState:
             current = entity.get(slot) or ""
             entity[slot] = current + cleaned_word
 
+    return entity
+
+
+def predict_crf_bert(state: GraphState) -> PredictCrfBertResultState:
+    sentence = state.get("user_input")
+
+    if not isinstance(sentence, str):
+        raise ValueError("state['user_input'] must be a string")
+    entity: NormalizeEntityInputState = predict_ner(sentence)
     return {
         "entities": entity,
         "지역": entity.get("지역"),
@@ -234,6 +320,11 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
     use_query_expansion = state.get("retrieval_use_query_expansion", True)
     bm25_weight = state.get("retrieval_bm25_weight", 0.5)
     embedding_weight = state.get("retrieval_embedding_weight", 0.5)
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    load_dotenv(os.path.join(root_path, ".env"))
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
 
     # state 검증은 tools에서 수행하므로 노드는 옵션 전달과 반환 포맷 유지에 집중한다.
     result = _search_hybrid_retriever_tool(
@@ -245,6 +336,7 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
         use_query_expansion=use_query_expansion,
         bm25_weight=bm25_weight,
         embedding_weight=embedding_weight,
+        use_openai=use_openai,
     )
     return {
         "retriever": result["retriever"],
@@ -277,6 +369,7 @@ def generate_user_response_node(state: GraphState) -> dict[str, str]:
 
 __all__ = [
     "singleton_model_node",
+    "predict_ner",
     "predict_crf_bert",
     "normalize_and_validate_entities",
     "mapping_url_query_node",
