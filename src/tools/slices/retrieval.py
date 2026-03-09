@@ -48,11 +48,15 @@ def _normalize_documents_for_retrieval(documents: list[object]) -> list[str]:
 def _needs_rebuild_retriever(
     retriever: object | None,
     documents: list[str],
+    use_openai: bool,
 ) -> bool:
     # 재사용 가능 여부는 기존 컨텍스트 타입/인덱싱 상태/문서 일치 여부로 판단한다.
+    target_provider = "openai" if use_openai else "local"
     if not isinstance(retriever, dict):
         return True
     if not retriever.get("is_indexed", False):
+        return True
+    if retriever.get("embedding_provider") != target_provider:
         return True
     cached_documents = retriever.get("documents")
     if not isinstance(cached_documents, list):
@@ -71,6 +75,7 @@ def build_hybrid_retriever(
     documents: list[str],
     bm25_weight: float = 0.5,
     embedding_weight: float = 0.5,
+    use_openai: bool = False,
     k1: float = 1.5,
     b: float = 0.75,
 ) -> dict[str, Any]:
@@ -79,6 +84,7 @@ def build_hybrid_retriever(
         documents=documents,
         bm25_weight=bm25_weight,
         embedding_weight=embedding_weight,
+        use_openai=use_openai,
         k1=k1,
         b=b,
     )
@@ -106,6 +112,7 @@ def search_hybrid_retriever(
     use_query_expansion: bool = True,
     bm25_weight: float = 0.5,
     embedding_weight: float = 0.5,
+    use_openai: bool = False,
 ) -> dict[str, object]:
     # 최상위 검색 함수 하나에서 선행 단계와 본 검색을 모두 처리하도록 묶는다.
     _validate_search_inputs(
@@ -125,11 +132,12 @@ def search_hybrid_retriever(
         }
 
     # 기존 인덱스 재사용 가능 시 그대로 쓰고, 문서가 바뀐 경우에만 재빌드한다.
-    if _needs_rebuild_retriever(retriever, normalized_documents):
+    if _needs_rebuild_retriever(retriever, normalized_documents, use_openai):
         retriever = build_hybrid_retriever(
             documents=normalized_documents,
             bm25_weight=bm25_weight,
             embedding_weight=embedding_weight,
+            use_openai=use_openai,
         )
     else:
         retriever = set_hybrid_weights(

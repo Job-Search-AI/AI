@@ -84,14 +84,36 @@ def get_crf(bert_model_name: str = DEFAULT_BERT_MODEL_NAME) -> Any:
 
 
 def get_embedding_model() -> Any:
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+    load_dotenv(os.path.join(root_path, ".env"))
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
     cache = get_model_cache()
-    if cache["embedding_model"] is None:
+    embedding_model = cache["embedding_model"]
+    need_load = embedding_model is None
+    if not need_load:
+        has_openai = hasattr(embedding_model, "embed_query") and hasattr(embedding_model, "embed_documents")
+        if use_openai and not has_openai:
+            need_load = True
+        if (not use_openai) and has_openai:
+            need_load = True
+
+    if need_load:
         with _CACHE_LOCK:
-            if cache["embedding_model"] is None:
+            embedding_model = cache["embedding_model"]
+            need_load = embedding_model is None
+            if not need_load:
+                has_openai = hasattr(embedding_model, "embed_query") and hasattr(embedding_model, "embed_documents")
+                if use_openai and not has_openai:
+                    need_load = True
+                if (not use_openai) and has_openai:
+                    need_load = True
+            if need_load:
                 try:
                     from src.tools.embedding.model import get_model
 
-                    cache["embedding_model"] = get_model()
+                    cache["embedding_model"] = get_model(use_openai=use_openai)
                 except Exception as exc:
                     raise RuntimeError(f"Failed to load embedding model: {exc}") from exc
 

@@ -320,6 +320,11 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
     use_query_expansion = state.get("retrieval_use_query_expansion", True)
     bm25_weight = state.get("retrieval_bm25_weight", 0.5)
     embedding_weight = state.get("retrieval_embedding_weight", 0.5)
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    load_dotenv(os.path.join(root_path, ".env"))
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
 
     # state 검증은 tools에서 수행하므로 노드는 옵션 전달과 반환 포맷 유지에 집중한다.
     result = _search_hybrid_retriever_tool(
@@ -331,6 +336,7 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
         use_query_expansion=use_query_expansion,
         bm25_weight=bm25_weight,
         embedding_weight=embedding_weight,
+        use_openai=use_openai,
     )
     return {
         "retriever": result["retriever"],
