@@ -1,7 +1,8 @@
 import os
-import sys
 
 import torch
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
 
 def generate_response(user_prompt, documents):
@@ -30,6 +31,51 @@ def generate_response(user_prompt, documents):
     Returns:
         str: 생성된 응답
     """
+    root_path = os.getenv("JOB_SEARCH_ROOT")
+    if not root_path:
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+    load_dotenv(os.path.join(root_path, ".env"))
+    use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
+
+    documents = "\n\n".join(documents)
+
+    if use_openai:
+        timeout = os.getenv("OPENAI_TIMEOUT_SECONDS")
+        retries = os.getenv("OPENAI_MAX_RETRIES")
+        llm = ChatOpenAI(
+            model=os.getenv("RESPONSE_MODEL_NAME", "gpt-5-nano"),
+            timeout=float(timeout) if timeout else None,
+            max_retries=int(retries) if retries else None,
+        )
+        schema = {
+            "title": "response",
+            "type": "object",
+            "properties": {
+                "response": {
+                    "type": "string",
+                    "description": "사용자 질문에 대한 최종 응답",
+                }
+            },
+            "required": ["response"],
+            "additionalProperties": False,
+        }
+        prompt = "\n".join(
+            [
+                "너는 취업 공고 정보 분석 전문가다.",
+                "아래 문서를 바탕으로 사용자 질문에 맞는 답변만 작성한다.",
+                "문서:",
+                documents,
+                "질문:",
+                user_prompt,
+            ]
+        )
+        result = llm.with_structured_output(
+            schema,
+            method="json_schema",
+            strict=True,
+        ).invoke(prompt)
+        return result["response"]
+
     # device 선택
     device = "cuda"
     
@@ -53,8 +99,6 @@ def generate_response(user_prompt, documents):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     # instruct와 user 메시지 생성
-
-    documents = "\n\n".join(documents)
 
     chat = [
         {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + documents},
@@ -96,4 +140,3 @@ if __name__ == "__main__":
     response = generate_response(user_prompt, documents)
     print(f"응답: {response}")
     
-
