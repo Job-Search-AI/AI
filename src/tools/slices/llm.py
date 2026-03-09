@@ -42,9 +42,14 @@ def generate_response(user_prompt, documents):
     if use_openai:
         timeout = os.getenv("OPENAI_TIMEOUT_SECONDS")
         retries = os.getenv("OPENAI_MAX_RETRIES")
+        sec = 120.0
+        if timeout:
+            sec = float(timeout)
+        if sec < 120.0:
+            sec = 120.0
         llm = ChatOpenAI(
             model=os.getenv("RESPONSE_MODEL_NAME", "gpt-5-nano"),
-            timeout=float(timeout) if timeout else None,
+            timeout=sec,
             max_retries=int(retries) if retries else None,
         )
         schema = {
