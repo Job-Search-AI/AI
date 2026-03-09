@@ -17,4 +17,7 @@ def health():
 def query(body: Body):
     from src.graph import run_job_search_graph
 
-    return run_job_search_graph({"user_input": body.user_input})
+    result = run_job_search_graph({"user_input": body.user_input})
+    if isinstance(result, dict):
+        result.pop("retriever", None)
+    return result
