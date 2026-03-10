@@ -7,6 +7,8 @@ from langchain_openai import ChatOpenAI
 from src.state import (
     CrawlingState,
     GraphState,
+    Ner,
+    Norm,
     NormalizeAndValidateEntitiesResultState,
     NormalizeAndValidateEntitiesState,
     NormalizeEntityInputState,
@@ -77,30 +79,6 @@ def predict_ner(user_input: str) -> dict[str, str]:
             timeout=float(timeout) if timeout else None,
             max_retries=int(retries) if retries else None,
         )
-        schema = {
-            "title": "ner",
-            "type": "object",
-            "properties": {
-                "지역": {
-                    "type": "string",
-                    "description": "사용자 문장에 있는 지역. 없으면 빈 문자열.",
-                },
-                "직무": {
-                    "type": "string",
-                    "description": "사용자 문장에 있는 직무. 없으면 빈 문자열.",
-                },
-                "경력": {
-                    "type": "string",
-                    "description": "사용자 문장에 있는 경력. 없으면 빈 문자열.",
-                },
-                "학력": {
-                    "type": "string",
-                    "description": "사용자 문장에 있는 학력. 없으면 빈 문자열.",
-                },
-            },
-            "required": ["지역", "직무", "경력", "학력"],
-            "additionalProperties": False,
-        }
         prompt = "\n".join(
             [
                 "사용자 문장에서 지역, 직무, 경력, 학력만 추출한다.",
@@ -110,16 +88,11 @@ def predict_ner(user_input: str) -> dict[str, str]:
             ]
         )
         result = llm.with_structured_output(
-            schema,
+            Ner,
             method="json_schema",
             strict=True,
         ).invoke(prompt)
-
-        for key in entity:
-            value = result.get(key, "")
-            if isinstance(value, str):
-                entity[key] = value.strip()
-        return entity
+        return result.model_dump(by_alias=True)
 
     cache = get_model_cache()
     model = cache.get("bert_model")
@@ -170,7 +143,7 @@ def predict_ner(user_input: str) -> dict[str, str]:
             current = entity.get(slot) or ""
             entity[slot] = current + cleaned_word
 
-    return entity
+    return Ner.model_validate(entity).model_dump(by_alias=True)
 
 
 def predict_crf_bert(state: GraphState) -> PredictCrfBertResultState:
@@ -222,6 +195,7 @@ def normalize_and_validate_entities(
     synonym_dict_path = os.path.join(base_dir, "data", "url_exchager", "synonym_dict.json")
 
     normalized_entities = normalize_entities(entity_dict, synonym_dict_path)
+    normalized_entities = Norm.model_validate(normalized_entities).model_dump(by_alias=True)
     missing_fields = check_missing_entities(normalized_entities)
 
     if missing_fields:

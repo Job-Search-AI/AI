@@ -7,4 +7,8 @@ class StrictBaseModel(BaseModel):
     ValidationError를 발생시켜 엄격한 데이터 검증을 수행하는 설정
     """
 
-    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        populate_by_name=True,
+    )
