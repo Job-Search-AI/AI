@@ -2,8 +2,7 @@ name: Render KeepAlive
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch:
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: read
