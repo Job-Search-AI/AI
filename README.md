@@ -328,3 +328,40 @@ uv run python run_local.py
 ```bash
 uv run langgraph dev
 ```
+
+## 10. Render Free Keep-Alive (GitHub Actions)
+
+Render free 웹 서비스는 유휴 상태가 지속되면 스핀다운될 수 있다. 로컬에서 상시 ping을 돌리지 않고, GitHub Actions 스케줄러로 `/health`를 주기 호출해 콜드스타트 빈도를 낮춘다.
+
+### 10.1 워크플로 파일
+
+- `.github/workflows/render-keepalive.yml`
+- 실행 트리거:
+  - `schedule`: `*/10 * * * *` (10분 간격)
+  - `workflow_dispatch`: 수동 실행
+- 동작:
+  - 기본 URL `https://jobsearchai-e63j.onrender.com/health` 호출
+  - `curl --fail --max-time 60 --retry 2` 옵션으로 실패 시 재시도
+  - `concurrency`로 중복 실행 방지
+
+### 10.2 URL Override (선택)
+
+기본 URL 대신 다른 헬스체크 URL을 쓰려면 GitHub 저장소 변수에 아래 키를 추가한다.
+
+- 변수명: `RENDER_HEALTHCHECK_URL`
+- 위치: `GitHub Repository > Settings > Secrets and variables > Actions > Variables`
+
+값이 비어 있으면 워크플로는 기본 URL을 사용한다.
+
+### 10.3 수동 실행 확인
+
+1. GitHub 저장소 `Actions` 탭에서 `Render KeepAlive` 선택
+2. `Run workflow` 실행
+3. `Ping health endpoint` 로그에서 HTTP 호출 성공 여부 확인
+
+### 10.4 운영 시 주의사항
+
+- 이 방식은 무료 플랜에서 가능한 범위의 keep-alive이며, 완전한 24시간 상시 가동을 보장하지 않는다.
+- 스케줄 워크플로는 기본 브랜치에서 동작한다. 이 저장소는 `main` 기준으로 운영한다.
+- 저장소 활동이 장기간 없으면(예: 60일) 스케줄 워크플로가 자동 비활성화될 수 있다.
+- 완전한 always-on이 필요하면 Render 유료 플랜 전환을 고려한다.
