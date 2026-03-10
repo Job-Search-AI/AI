@@ -10,3 +10,4 @@ AGENTS.md
 .langgraph_api/
 .pytest_cache/
 .uv-cache/
+.DS_Store
