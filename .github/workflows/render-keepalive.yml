@@ -39,7 +39,7 @@ jobs:
         env:
           TARGET_URL: ${{ steps.target.outputs.url }}
         run: |
-          echo "Started at: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "Started at: $(TZ=Asia/Seoul date +'%Y-%m-%dT%H:%M:%S%z')"
           curl --fail --show-error --silent \
             --max-time 60 \
             --retry 2 \
