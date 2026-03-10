@@ -25,6 +25,6 @@ services:
       - key: OPENAI_MAX_RETRIES
         value: "2"
       - key: SELF_PING_ENABLED
-        value: "true"
+        value: "false"
       - key: SELF_PING_INTERVAL_SECONDS
         value: "300"
