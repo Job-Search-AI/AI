@@ -33,7 +33,7 @@ async def ping_loop():
 @app.on_event("startup")
 async def start_ping():
     global ping_task
-    if os.getenv("SELF_PING_ENABLED", "false") == "true":
+    if os.getenv("SELF_PING_ENABLED", "true") == "true":
         ping_task = asyncio.create_task(ping_loop())
 
 
