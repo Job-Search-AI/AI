@@ -259,7 +259,9 @@ def mapping_url_query_node(state: GraphState) -> dict[str, str]:
 
 def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
     url = state.get("url")
-    max_jobs = state.get("max_jobs", 50)
+    max_jobs = state.get("max_jobs")
+    if max_jobs is None:
+        max_jobs = int(os.getenv("MAX_JOBS", "50"))
 
     if not isinstance(url, str) or not url.strip():
         raise ValueError("state['url'] must be a non-empty string")
