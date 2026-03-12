@@ -1,0 +1,38 @@
+substitutions:
+  _AR_REGION: us-central1
+  _AR_REPO: job-search-openai
+  _IMAGE_NAME: ai
+
+steps:
+  - id: Build image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - Dockerfile
+      - -t
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
+      - -t
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest
+      - .
+
+  - id: Push image (build id)
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
+
+  - id: Push image (latest)
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest
+
+images:
+  - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
+  - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 3600s
