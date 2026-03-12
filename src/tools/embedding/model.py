@@ -10,9 +10,7 @@ from langchain_openai import OpenAIEmbeddings
 # os.environ['HF_HOME'] = cache_dir
 sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
-# 유틸도 tools 패키지 하위로 맞춰 src 비코어 디렉토리 의존을 제거한다.
 from src.tools.utils.str_generator import dict_to_str
-from src.tools.utils.device_selector import get_device, print_device_info
 
 # 모델 캐시를 위한 전역 변수
 _model_cache = None
@@ -32,6 +30,7 @@ def get_model(use_openai=False):
 
     if _model_cache is None:
         from sentence_transformers import SentenceTransformer
+        from src.tools.utils.device_selector import get_device, print_device_info
 
         device = get_device()
         print_device_info(device)

@@ -5,12 +5,9 @@
 from typing import Any
 
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 
 from .bm25_retriever import BM25Retriever
 from .query_processor import QueryProcessor
-# 코어 실행 경로를 유지하기 위해 임베딩 의존도 tools 내부 모듈로 고정한다.
-from src.tools.embedding.model import get_model, similarity_docs_retrieval
 
 
 def _ensure_indexed(context: dict[str, Any]) -> None:
@@ -18,18 +15,16 @@ def _ensure_indexed(context: dict[str, Any]) -> None:
         raise ValueError("인덱스가 구축되지 않았습니다. build_hybrid_retriever()를 먼저 호출하세요.")
 
 
-def _normalize_scores(scores: list[float], scaler: MinMaxScaler) -> np.ndarray:
+def _normalize_scores(scores: list[float]) -> np.ndarray:
     if not scores:
         return np.array([])
 
-    scores_array = np.array(scores).reshape(-1, 1)
-    if np.std(scores_array) == 0:
+    scores_array = np.array(scores, dtype=np.float32)
+    max_score = float(np.max(scores_array))
+    min_score = float(np.min(scores_array))
+    if max_score == min_score:
         return np.ones(len(scores))
-
-    try:
-        return scaler.fit_transform(scores_array).flatten()
-    except Exception:
-        return scores_array.flatten()
+    return (scores_array - min_score) / (max_score - min_score)
 
 
 def _combine_scores_weighted_average(
@@ -85,8 +80,8 @@ def _combine_weighted_average(
     all_bm25_scores = [bm25_results.get(idx, 0.0) for idx in all_doc_indices]
     all_embedding_scores = [embedding_results.get(idx, 0.0) for idx in all_doc_indices]
 
-    normalized_bm25 = _normalize_scores(all_bm25_scores, context["bm25_scaler"])
-    normalized_embedding = _normalize_scores(all_embedding_scores, context["embedding_scaler"])
+    normalized_bm25 = _normalize_scores(all_bm25_scores)
+    normalized_embedding = _normalize_scores(all_embedding_scores)
     combined_scores = _combine_scores_weighted_average(
         normalized_bm25,
         normalized_embedding,
@@ -142,6 +137,7 @@ def build_hybrid_retriever(
     b: float = 0.75,
 ) -> dict[str, Any]:
     print("하이브리드 검색 인덱스 구축 시작...")
+    from src.tools.embedding.model import get_model
 
     bm25_retriever = BM25Retriever(k1=k1, b=b)
     query_processor = QueryProcessor()
@@ -166,8 +162,6 @@ def build_hybrid_retriever(
         "query_processor": query_processor,
         "embedding_model": embedding_model,
         "document_embeddings": document_embeddings,
-        "bm25_scaler": MinMaxScaler(),
-        "embedding_scaler": MinMaxScaler(),
         "is_indexed": True,
         "documents": list(documents),
         "embedding_provider": embedding_provider,
@@ -183,6 +177,7 @@ def search_hybrid_retriever(
 ) -> tuple[list[str], list[float]]:
     _ensure_indexed(context)  # 인덱스가 준비되었는지 검사
     if not query.strip(): return [], []
+    from src.tools.embedding.model import similarity_docs_retrieval
 
     # 쿼리 확장 적용 여부에 따라 검색어 결정
     if use_query_expansion:
@@ -239,6 +234,7 @@ def get_hybrid_component_results(
     top_k: int = 10,
 ) -> dict[str, Any]:
     _ensure_indexed(context)
+    from src.tools.embedding.model import similarity_docs_retrieval
 
     expanded_query = context["query_processor"].get_expanded_query_string(query)
 
