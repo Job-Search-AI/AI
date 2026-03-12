@@ -45,10 +45,26 @@ def _log_mem(state: Mapping[str, Any], stage: str) -> None:
     if not isinstance(crawled_count, int):
         crawled_count = 0
 
+    cgroup_mb = 0.0
+    cgroup_path = "/sys/fs/cgroup/memory.current"
+    if os.path.exists(cgroup_path):
+        with open(cgroup_path, "r", encoding="utf-8") as f:
+            cgroup_raw = f.read().strip()
+        if cgroup_raw:
+            cgroup_mb = round(int(cgroup_raw) / 1024 / 1024, 2)
+    else:
+        cgroup_path = "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+        if os.path.exists(cgroup_path):
+            with open(cgroup_path, "r", encoding="utf-8") as f:
+                cgroup_raw = f.read().strip()
+            if cgroup_raw:
+                cgroup_mb = round(int(cgroup_raw) / 1024 / 1024, 2)
+
     payload = {
         "request_id": state.get("_request_id", ""),
         "stage": stage,
         "rss_mb": _get_rss_mb(),
+        "cgroup_mb": cgroup_mb,
         "crawled_count": crawled_count,
         "elapsed_ms": elapsed_ms,
     }
@@ -120,8 +136,14 @@ def run_job_search_graph(initial_state: Mapping[str, Any]) -> GraphState:
 
     # 입력 원본을 직접 바꾸지 않기 위해 복사본을 만들어 그래프에 전달한다.
     state: GraphState = dict(initial_state)
-    state["_request_id"] = uuid.uuid4().hex
-    state["_started_ms"] = int(time.time() * 1000)
+    request_id = state.get("_request_id")
+    if not isinstance(request_id, str) or not request_id:
+        request_id = uuid.uuid4().hex
+    state["_request_id"] = request_id
+    started_ms = state.get("_started_ms")
+    if not isinstance(started_ms, int):
+        started_ms = int(time.time() * 1000)
+    state["_started_ms"] = started_ms
     _log_mem(state, "start")
 
     query = state.get("query")

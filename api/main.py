@@ -65,7 +65,7 @@ async def query(body: Body):
         query_limit = int(os.getenv("QUERY_CONCURRENCY", "1"))
         query_semaphore = asyncio.Semaphore(query_limit)
 
-    timeout = float(os.getenv("QUERY_BUSY_TIMEOUT_SECONDS", "2"))
+    timeout = float(os.getenv("QUERY_BUSY_TIMEOUT_SECONDS", "45"))
     acquired = False
 
     try:

@@ -48,11 +48,26 @@ def _log_mem(state: GraphState, stage: str, crawled_count: int) -> None:
         rss_mb = round(rss / 1024 / 1024, 2)
     else:
         rss_mb = round(rss / 1024, 2)
+    cgroup_mb = 0.0
+    cgroup_path = "/sys/fs/cgroup/memory.current"
+    if os.path.exists(cgroup_path):
+        with open(cgroup_path, "r", encoding="utf-8") as f:
+            cgroup_raw = f.read().strip()
+        if cgroup_raw:
+            cgroup_mb = round(int(cgroup_raw) / 1024 / 1024, 2)
+    else:
+        cgroup_path = "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+        if os.path.exists(cgroup_path):
+            with open(cgroup_path, "r", encoding="utf-8") as f:
+                cgroup_raw = f.read().strip()
+            if cgroup_raw:
+                cgroup_mb = round(int(cgroup_raw) / 1024 / 1024, 2)
 
     payload = {
         "request_id": state.get("_request_id", ""),
         "stage": stage,
         "rss_mb": rss_mb,
+        "cgroup_mb": cgroup_mb,
         "crawled_count": crawled_count,
         "elapsed_ms": elapsed_ms,
     }
@@ -318,12 +333,7 @@ def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
         raise ValueError("state['url'] must be a non-empty string")
     if max_jobs is not None and not isinstance(max_jobs, int):
         raise ValueError("state['max_jobs'] must be an int or None")
-    if max_jobs is None:
-        max_jobs = int(os.getenv("MAX_JOBS_DEFAULT", "8"))
-
-    max_jobs_limit = int(os.getenv("MAX_JOBS_LIMIT", "12"))
-    if max_jobs > max_jobs_limit:
-        max_jobs = max_jobs_limit
+    max_jobs = int(os.getenv("MAX_JOBS_LIMIT", "10"))
 
     html_contents = _crawl_job_html_from_saramin_tool(url, max_jobs)
     crawled_count = len(html_contents)
@@ -344,10 +354,14 @@ def parse_job_info_node(state: GraphState) -> ParsingState:
     # 파싱 로직은 tools 레이어를 단일 진입점으로 써서 재사용 경로를 통일한다.
     parsed_list = _parsing_job_info_tool(html_contents)
     crawled_count = state.get("crawled_count", len(html_contents))
+    html_contents.clear()
     if not isinstance(crawled_count, int):
-        crawled_count = len(html_contents)
+        crawled_count = len(parsed_list)
     _log_mem(state, "after_parse", crawled_count)
-    return {"job_info_list": parsed_list}
+    return {
+        "job_info_list": parsed_list,
+        "html_contents": [],
+    }
 
 
 def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
@@ -383,9 +397,24 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
     crawled_count = state.get("crawled_count", 0)
     if not isinstance(crawled_count, int):
         crawled_count = 0
+    minimal_docs = []
+    retrieved_docs = result["retrieved_job_info_list"]
+    if isinstance(retrieved_docs, list):
+        for doc in retrieved_docs:
+            minimal_docs.append(doc)
+    if not minimal_docs and isinstance(raw_documents, list):
+        backup_count = 0
+        for doc in raw_documents:
+            minimal_docs.append(doc)
+            backup_count = backup_count + 1
+            if backup_count >= 5:
+                break
+    if isinstance(raw_documents, list):
+        raw_documents.clear()
     _log_mem(state, "after_retrieval", crawled_count)
     return {
         "retriever": result["retriever"],
+        "job_info_list": minimal_docs,
         "retrieved_job_info_list": result["retrieved_job_info_list"],
         "retrieved_scores": result["retrieved_scores"],
     }

@@ -1,4 +1,3 @@
-import torch
 import os
 
 def get_device(device_preference="auto"):
@@ -11,6 +10,8 @@ def get_device(device_preference="auto"):
     Returns:
         str: 선택된 device
     """
+    import torch
+
     # 환경 변수에서 device 설정 확인
     env_device = os.getenv('DEVICE_PREFERENCE', None)
     if env_device:
@@ -51,6 +52,8 @@ def print_device_info(device):
     Args:
         device (str): 선택된 device
     """
+    import torch
+
     print(f"=== Device 정보 ===")
     print(f"선택된 device: {device}")
     
