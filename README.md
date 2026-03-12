@@ -329,40 +329,34 @@ uv run python run_local.py
 uv run langgraph dev
 ```
 
-## 10. Render Free Keep-Alive (GitHub Actions)
+## 10. Render Free Keep-Alive (Better Stack Uptime Free)
 
-Render free 웹 서비스는 유휴 상태가 지속되면 스핀다운될 수 있다. 백엔드 내부 셀프 ping(5분)과 GitHub Actions 스케줄러 ping(5분)을 함께 사용해 콜드스타트 빈도를 낮춘다.
+Render free 웹 서비스는 유휴 상태가 지속되면 스핀다운될 수 있다. 이 프로젝트는 GitHub Actions keep-alive 대신 Better Stack Uptime(무료 플랜)으로 `/health`를 10분 주기로 확인한다.
 
-### 10.1 워크플로 파일
+### 10.1 Better Stack 모니터 설정
 
-- `.github/workflows/render-keepalive.yml`
-- 실행 트리거:
-  - `schedule`: `*/5 * * * *` (5분 간격)
-- 동작:
-  - 기본 URL `https://jobsearchai-e63j.onrender.com/health` 호출
-  - `curl --fail --max-time 60 --retry 2` 옵션으로 실패 시 재시도
-  - `concurrency`로 중복 실행 방지
+- Monitor 타입: `HTTP/S URL`
+- URL: `https://jobsearchai-e63j.onrender.com/health`
+- Method: `GET`
+- Check frequency: `10 minutes`
+- Timeout: `30 seconds`
+- Alert 정책(초기 권장):
+  - 이메일 알림 활성화
+  - 연속 실패 2회 기준으로 알림
 
-### 10.2 URL Override (선택)
-
-기본 URL 대신 다른 헬스체크 URL을 쓰려면 GitHub 저장소 변수에 아래 키를 추가한다.
-
-- 변수명: `RENDER_HEALTHCHECK_URL`
-- 위치: `GitHub Repository > Settings > Secrets and variables > Actions > Variables`
-
-값이 비어 있으면 워크플로는 기본 URL을 사용한다.
-
-### 10.3 백엔드 셀프 ping 설정
+### 10.2 백엔드 설정
 
 - `render.yaml` env 설정:
-  - `SELF_PING_ENABLED=true`
-  - `SELF_PING_INTERVAL_SECONDS=300`
-- 기본 ping URL은 `https://jobsearchai-e63j.onrender.com/health`다.
-- 다른 URL을 쓰려면 Render 환경변수 `SELF_PING_URL`을 설정한다.
+  - `SELF_PING_ENABLED=false`
+- `/health` 엔드포인트는 기존과 동일하게 `200` + `{"status":"ok"}`를 반환한다.
 
-### 10.4 운영 시 주의사항
+### 10.3 운영 확인 체크리스트
 
-- 이 방식은 무료 플랜에서 가능한 범위의 keep-alive이며, 완전한 24시간 상시 가동을 보장하지 않는다.
-- 스케줄 워크플로는 기본 브랜치에서 동작한다. 이 저장소는 `main` 기준으로 운영한다.
-- 저장소 활동이 장기간 없으면(예: 60일) 스케줄 워크플로가 자동 비활성화될 수 있다.
-- 완전한 always-on이 필요하면 Render 유료 플랜 전환을 고려한다.
+- Better Stack에서 첫 체크가 성공으로 기록되는지 확인한다.
+- 20~30분 관찰해 10분 간격으로 체크 이력이 누적되는지 확인한다.
+- GitHub Actions 탭에서 기존 keep-alive 스케줄 실행이 더 이상 발생하지 않는지 확인한다.
+
+### 10.4 참고 문서
+
+- Better Stack Check Frequency: https://betterstack.com/docs/uptime/check-frequency/
+- Better Stack Pricing: https://betterstack.com/pricing

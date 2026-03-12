@@ -1,10 +1,13 @@
 from .base import StrictBaseModel
 from .graph import GraphState
 from .slices import (
+    Ask,
     CrawlingState,
     EntitySlots,
     LlmState,
     ModelCacheState,
+    Ner,
+    Norm,
     NormalizeAndValidateEntitiesResultState,
     NormalizeAndValidateEntitiesState,
     NormalizeEntityInputState,
@@ -17,6 +20,8 @@ from .slices import (
     # 상위 패키지에서도 retrieval 옵션 타입을 바로 import 할 수 있게 노출한다.
     RetrievalOptionState,
     RetrievalState,
+    Reply,
+    Result,
     SessionState,
     SingletonModelCache,
     SingletonModelNodeState,
@@ -40,7 +45,10 @@ __all__ = [
     "reset_model_cache",
     "SingletonModelNodeState",
     "SingletonModelNodeUpdate",
+    "Ask",
     "EntitySlots",
+    "Ner",
+    "Norm",
     "NormalizedEntitySlots",
     "NormalizationResult",
     "PredictCrfBertState",
@@ -49,4 +57,6 @@ __all__ = [
     "NormalizeEntityOutputState",
     "NormalizeAndValidateEntitiesResultState",
     "NormalizeAndValidateEntitiesState",
+    "Reply",
+    "Result",
 ]

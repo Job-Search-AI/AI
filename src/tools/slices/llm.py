@@ -1,9 +1,9 @@
 import os
 
-import torch
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
+
+from src.state import Reply
 
 def generate_response(user_prompt, documents):
     """
@@ -52,18 +52,6 @@ def generate_response(user_prompt, documents):
             timeout=sec,
             max_retries=int(retries) if retries else None,
         )
-        schema = {
-            "title": "response",
-            "type": "object",
-            "properties": {
-                "response": {
-                    "type": "string",
-                    "description": "사용자 질문에 대한 최종 응답",
-                }
-            },
-            "required": ["response"],
-            "additionalProperties": False,
-        }
         prompt = "\n".join(
             [
                 "너는 취업 공고 정보 분석 전문가다.",
@@ -75,14 +63,17 @@ def generate_response(user_prompt, documents):
             ]
         )
         result = llm.with_structured_output(
-            schema,
+            Reply,
             method="json_schema",
             strict=True,
         ).invoke(prompt)
-        return result["response"]
+        return result.response
 
     # device 선택
     device = "cuda"
+
+    import torch
+    from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
     
     # 모델, 토크나이저 로드
     model_name = "skt/A.X-4.0-Light"
@@ -135,7 +126,7 @@ def generate_response(user_prompt, documents):
     len_input_prompt = len(inputs[0])
     response = tokenizer.decode(output_ids[0][len_input_prompt:], skip_special_tokens=True)
 
-    return response
+    return Reply(response=response).response
 
 if __name__ == "__main__":
     user_prompt = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."

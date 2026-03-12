@@ -55,3 +55,7 @@ class GraphState(TypedDict, total=False):
 
     # pipeline status
     error: str | None
+
+    # runtime metadata
+    _request_id: str
+    _started_ms: int
