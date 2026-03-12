@@ -1,7 +1,6 @@
 import os
 import sys
 import numpy as np
-import torch
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 # python -m src.embedding.model
@@ -11,7 +10,6 @@ from langchain_openai import OpenAIEmbeddings
 # os.environ['HF_HOME'] = cache_dir
 sys.path.append("/content/drive/MyDrive/ai_enginner/job_search/AI/")
 
-from sentence_transformers import SentenceTransformer
 # 유틸도 tools 패키지 하위로 맞춰 src 비코어 디렉토리 의존을 제거한다.
 from src.tools.utils.str_generator import dict_to_str
 from src.tools.utils.device_selector import get_device, print_device_info
@@ -33,6 +31,8 @@ def get_model(use_openai=False):
         return _openai_cache
 
     if _model_cache is None:
+        from sentence_transformers import SentenceTransformer
+
         device = get_device()
         print_device_info(device)
         print('모델 로드 시작')

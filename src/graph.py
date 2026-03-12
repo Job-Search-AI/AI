@@ -1,3 +1,9 @@
+import json
+import os
+import resource
+import sys
+import time
+import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -17,6 +23,36 @@ from src.router import ROUTE_MAP_URL, ROUTE_NEED_MORE_INFO, route_after_normaliz
 from src.state import GraphState
 
 _COMPILED_GRAPH: Any | None = None
+
+
+def _get_rss_mb() -> float:
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if sys.platform == "darwin":
+        return round(rss / 1024 / 1024, 2)
+    return round(rss / 1024, 2)
+
+
+def _log_mem(state: Mapping[str, Any], stage: str) -> None:
+    if os.getenv("MEM_LOG_ENABLED", "false").lower() != "true":
+        return
+
+    started_ms = state.get("_started_ms")
+    elapsed_ms = 0
+    if isinstance(started_ms, int):
+        elapsed_ms = int(time.time() * 1000) - started_ms
+
+    crawled_count = state.get("crawled_count", 0)
+    if not isinstance(crawled_count, int):
+        crawled_count = 0
+
+    payload = {
+        "request_id": state.get("_request_id", ""),
+        "stage": stage,
+        "rss_mb": _get_rss_mb(),
+        "crawled_count": crawled_count,
+        "elapsed_ms": elapsed_ms,
+    }
+    print(json.dumps(payload, ensure_ascii=False))
 
 
 def build_graph() -> StateGraph:
@@ -84,6 +120,10 @@ def run_job_search_graph(initial_state: Mapping[str, Any]) -> GraphState:
 
     # 입력 원본을 직접 바꾸지 않기 위해 복사본을 만들어 그래프에 전달한다.
     state: GraphState = dict(initial_state)
+    state["_request_id"] = uuid.uuid4().hex
+    state["_started_ms"] = int(time.time() * 1000)
+    _log_mem(state, "start")
+
     query = state.get("query")
     user_input = state.get("user_input")
 
@@ -95,11 +135,21 @@ def run_job_search_graph(initial_state: Mapping[str, Any]) -> GraphState:
     # 검색 개수는 미지정 시 5개를 기본값으로 사용한다.
     if "retrieval_top_k" not in state:
         state["retrieval_top_k"] = 5
+    top_k = state.get("retrieval_top_k")
+    if isinstance(top_k, int) and top_k > 5:
+        state["retrieval_top_k"] = 5
 
     # 컴파일된 그래프를 실행한다.
     result = get_compiled_graph().invoke(state)
     if not isinstance(result, dict):
         raise ValueError("compiled graph returned non-dict result")
+    if "_request_id" not in result:
+        result["_request_id"] = state["_request_id"]
+    if "_started_ms" not in result:
+        result["_started_ms"] = state["_started_ms"]
+    _log_mem(result, "end")
+    result.pop("_request_id", None)
+    result.pop("_started_ms", None)
     return result
 
 
