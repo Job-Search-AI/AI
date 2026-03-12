@@ -62,7 +62,7 @@ def query(body: Ask):
 
     return Result(
         user_input=result["user_input"],
-        query=result["query"],
+        query=result.get("query", body.user_input),
         status=result["status"],
         message=result.get("message"),
         entities=entities,
