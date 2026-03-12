@@ -118,7 +118,12 @@ def predict_ner(user_input: str) -> dict[str, str]:
             method="json_schema",
             strict=True,
         ).invoke(prompt)
-        return result.model_dump(by_alias=True)
+        parsed = getattr(result, "parsed", None)
+        if isinstance(parsed, Ner):
+            return parsed.model_dump(by_alias=True)
+        if isinstance(result, Ner):
+            return result.model_dump(by_alias=True)
+        return Ner.model_validate(result).model_dump(by_alias=True)
     import torch
 
     cache = get_model_cache()
