@@ -1,9 +1,7 @@
 import os
 
-import torch
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
 
 from src.state import Reply
 
@@ -73,6 +71,9 @@ def generate_response(user_prompt, documents):
 
     # device 선택
     device = "cuda"
+
+    import torch
+    from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
     
     # 모델, 토크나이저 로드
     model_name = "skt/A.X-4.0-Light"

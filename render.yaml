@@ -24,6 +24,16 @@ services:
         value: "180"
       - key: OPENAI_MAX_RETRIES
         value: "2"
+      - key: MAX_JOBS_DEFAULT
+        value: "8"
+      - key: MAX_JOBS_LIMIT
+        value: "12"
+      - key: QUERY_CONCURRENCY
+        value: "1"
+      - key: QUERY_BUSY_TIMEOUT_SECONDS
+        value: "2"
+      - key: MEM_LOG_ENABLED
+        value: "true"
       - key: SELF_PING_ENABLED
         value: "false"
       - key: SELF_PING_INTERVAL_SECONDS

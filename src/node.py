@@ -1,5 +1,8 @@
 import json
 import os
+import resource
+import sys
+import time
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -33,6 +36,31 @@ from src.tools.slices.entity_normalizer import (
 )
 
 
+def _log_mem(state: GraphState, stage: str, crawled_count: int) -> None:
+    if os.getenv("MEM_LOG_ENABLED", "false").lower() != "true":
+        return
+
+    started_ms = state.get("_started_ms")
+    elapsed_ms = 0
+    if isinstance(started_ms, int):
+        elapsed_ms = int(time.time() * 1000) - started_ms
+
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if sys.platform == "darwin":
+        rss_mb = round(rss / 1024 / 1024, 2)
+    else:
+        rss_mb = round(rss / 1024, 2)
+
+    payload = {
+        "request_id": state.get("_request_id", ""),
+        "stage": stage,
+        "rss_mb": rss_mb,
+        "crawled_count": crawled_count,
+        "elapsed_ms": elapsed_ms,
+    }
+    print(json.dumps(payload, ensure_ascii=False))
+
+
 def singleton_model_node(state: GraphState) -> SingletonModelNodeUpdate:
     bert_model_name = state.get("bert_model_name", DEFAULT_BERT_MODEL_NAME)
 
@@ -53,8 +81,6 @@ def singleton_model_node(state: GraphState) -> SingletonModelNodeUpdate:
 
 
 def predict_ner(user_input: str) -> dict[str, str]:
-    import torch
-
     root_path = os.getenv("JOB_SEARCH_ROOT")
     if not root_path:
         root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -93,6 +119,7 @@ def predict_ner(user_input: str) -> dict[str, str]:
             strict=True,
         ).invoke(prompt)
         return result.model_dump(by_alias=True)
+    import torch
 
     cache = get_model_cache()
     model = cache.get("bert_model")
@@ -260,18 +287,25 @@ def mapping_url_query_node(state: GraphState) -> dict[str, str]:
 def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
     url = state.get("url")
     max_jobs = state.get("max_jobs")
-    if max_jobs is None:
-        max_jobs = int(os.getenv("MAX_JOBS", "50"))
 
     if not isinstance(url, str) or not url.strip():
         raise ValueError("state['url'] must be a non-empty string")
     if max_jobs is not None and not isinstance(max_jobs, int):
         raise ValueError("state['max_jobs'] must be an int or None")
+    if max_jobs is None:
+        max_jobs = int(os.getenv("MAX_JOBS_DEFAULT", "8"))
+
+    max_jobs_limit = int(os.getenv("MAX_JOBS_LIMIT", "12"))
+    if max_jobs > max_jobs_limit:
+        max_jobs = max_jobs_limit
 
     html_contents = _crawl_job_html_from_saramin_tool(url, max_jobs)
+    crawled_count = len(html_contents)
+    _log_mem(state, "after_crawl", crawled_count)
     return {
+        "max_jobs": max_jobs,
         "html_contents": html_contents,
-        "crawled_count": len(html_contents),
+        "crawled_count": crawled_count,
     }
 
 
@@ -283,6 +317,10 @@ def parse_job_info_node(state: GraphState) -> ParsingState:
 
     # 파싱 로직은 tools 레이어를 단일 진입점으로 써서 재사용 경로를 통일한다.
     parsed_list = _parsing_job_info_tool(html_contents)
+    crawled_count = state.get("crawled_count", len(html_contents))
+    if not isinstance(crawled_count, int):
+        crawled_count = len(html_contents)
+    _log_mem(state, "after_parse", crawled_count)
     return {"job_info_list": parsed_list}
 
 
@@ -292,6 +330,8 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
     raw_documents = state.get("job_info_list")
     retriever = state.get("retriever")
     top_k = state.get("retrieval_top_k")
+    if isinstance(top_k, int) and top_k > 5:
+        top_k = 5
     combination_method = state.get("retrieval_combination_method", "weighted_average")
     use_query_expansion = state.get("retrieval_use_query_expansion", True)
     bm25_weight = state.get("retrieval_bm25_weight", 0.5)
@@ -314,6 +354,10 @@ def search_hybrid_retriever_node(state: GraphState) -> RetrievalState:
         embedding_weight=embedding_weight,
         use_openai=use_openai,
     )
+    crawled_count = state.get("crawled_count", 0)
+    if not isinstance(crawled_count, int):
+        crawled_count = 0
+    _log_mem(state, "after_retrieval", crawled_count)
     return {
         "retriever": result["retriever"],
         "retrieved_job_info_list": result["retrieved_job_info_list"],
