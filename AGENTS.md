@@ -2,6 +2,9 @@
 커밋 메시지 작성 및 수정 작업에서는 `commit-message-rule` 스킬을 우선 사용한다.
 렌더 배포를 한다면 `render-deploy` 스킬을 사용한다.
 openai 문서를 참고해야 한다면 `openai-docs` 스킬을 사용한다.
+새로운 스레드를 시작/재개/인수인계할 때는 `thread-handoff-rule` 스킬을 우선 사용한다.
+- 새로운 스레드를 시작하거나 기존 스레드 작업을 이어갈 때는 반드시 `.ops/thread_notes/INDEX.README.md`와 해당 `THREAD.*.README.md`를 먼저 참조한다.
+- 단순 대화를 제외한 실작업 스레드(코드/인프라/문서 변경)는 `.ops/thread_notes/`에 스레드 문서를 생성하고 작업 중/종료 시 지속 갱신한다.
 
 사용자가 명시적으로 다르게 요청한 경우만 예외로 한다.
 

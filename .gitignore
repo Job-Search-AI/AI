@@ -12,4 +12,6 @@ AGENTS.md
 .uv-cache/
 .DS_Store
 .codex/
-GCP_README.md
+GCP.README.md
+
+/.ops/thread_notes/
