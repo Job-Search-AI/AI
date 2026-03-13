@@ -221,6 +221,125 @@ curl -sS -X POST http://localhost:8000/query \
   -d '{"user_input":"서울 AI 엔지니어 신입 고졸 채용공고 찾아줘."}'
 ```
 
+---
+
+### 3.3 `POST /query/jobs`
+
+검색 작업을 비동기로 접수한다. 요청은 즉시 큐에 적재되고 `jobId`를 반환한다.
+
+#### 요청 헤더
+
+```http
+Content-Type: application/json
+```
+
+#### 요청 본문
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `user_input` | `string` | Y | 사용자의 자연어 검색 문장 |
+
+#### 성공 응답
+
+`202 Accepted`
+
+```json
+{
+  "jobId": "abc123",
+  "status": "queued"
+}
+```
+
+#### 검증 오류 예시
+
+`422 Unprocessable Entity`
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "user_input"],
+      "msg": "Field required",
+      "type": "missing"
+    }
+  ]
+}
+```
+
+#### curl 예시
+
+```bash
+curl -sS -X POST http://localhost:8000/query/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"user_input":"서울 백엔드 신입 대졸 채용공고 찾아줘"}'
+```
+
+---
+
+### 3.4 `GET /query/jobs/{jobId}`
+
+비동기 검색 작업 상태를 조회한다.
+
+#### 상태 전이
+
+`queued -> running -> done | failed`
+
+#### 성공 응답 예시 1: 대기/실행중
+
+`200 OK`
+
+```json
+{
+  "jobId": "abc123",
+  "status": "running"
+}
+```
+
+#### 성공 응답 예시 2: 완료
+
+`200 OK`
+
+```json
+{
+  "jobId": "abc123",
+  "status": "done",
+  "result": {
+    "user_input": "서울 백엔드 신입 대졸 채용공고 찾아줘",
+    "query": "서울 백엔드 신입 대졸 채용공고 찾아줘",
+    "status": "complete",
+    "message": null
+  }
+}
+```
+
+#### 성공 응답 예시 3: 실패
+
+`200 OK`
+
+```json
+{
+  "jobId": "abc123",
+  "status": "failed",
+  "message": "job failed"
+}
+```
+
+#### 없는 작업 ID
+
+`404 Not Found`
+
+```json
+{
+  "message": "job not found"
+}
+```
+
+#### curl 예시
+
+```bash
+curl -sS http://localhost:8000/query/jobs/abc123
+```
+
 ## 4. 문서 경로
 
 | 경로 | 설명 |
