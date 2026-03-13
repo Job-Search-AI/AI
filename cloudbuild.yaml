@@ -38,12 +38,11 @@ steps:
     args:
       - -ceu
       - |
-        IMAGE="${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest"
         gcloud compute ssh "${_VM_NAME}" \
           --project="$PROJECT_ID" \
           --zone="${_VM_ZONE}" \
           --quiet \
-          --command="sudo systemctl restart ${_SERVICE_NAME} && sleep 5 && sudo systemctl is-active ${_SERVICE_NAME} && sudo docker inspect ${_CONTAINER_NAME} --format 'container_image_id={{.Image}} started={{.State.StartedAt}}' && sudo docker image inspect ${IMAGE} --format 'latest_id={{.Id}} repodigests={{.RepoDigests}}'"
+          --command="sudo systemctl restart ${_SERVICE_NAME} && sleep 5 && sudo systemctl is-active ${_SERVICE_NAME} && sudo docker inspect ${_CONTAINER_NAME} --format 'container_image_id={{.Image}} started={{.State.StartedAt}}' && sudo docker image inspect ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest --format 'latest_id={{.Id}} repodigests={{.RepoDigests}}'"
 
 images:
   - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
