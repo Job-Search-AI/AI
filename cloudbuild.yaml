@@ -2,6 +2,10 @@ substitutions:
   _AR_REGION: us-central1
   _AR_REPO: job-search-openai
   _IMAGE_NAME: ai
+  _VM_NAME: instance-20260312-140429
+  _VM_ZONE: us-central1-c
+  _SERVICE_NAME: jobsearch-api
+  _CONTAINER_NAME: jobsearch-api
 
 steps:
   - id: Build image
@@ -27,6 +31,19 @@ steps:
     args:
       - push
       - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest
+
+  - id: Rollout VM (restart service)
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        IMAGE="${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest"
+        gcloud compute ssh "${_VM_NAME}" \
+          --project="$PROJECT_ID" \
+          --zone="${_VM_ZONE}" \
+          --quiet \
+          --command="sudo systemctl restart ${_SERVICE_NAME} && sleep 5 && sudo systemctl is-active ${_SERVICE_NAME} && sudo docker inspect ${_CONTAINER_NAME} --format 'container_image_id={{.Image}} started={{.State.StartedAt}}' && sudo docker image inspect ${IMAGE} --format 'latest_id={{.Id}} repodigests={{.RepoDigests}}'"
 
 images:
   - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
