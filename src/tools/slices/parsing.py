@@ -13,10 +13,9 @@ from src.tools.parsing.title import parse_title_text
 
 
 def _build_parsed_text(html_content: str) -> str:
-    # HTML 하나를 기존 포맷과 같은 순서로 조합해 원래 출력 형태를 유지한다.
+    # HTML 하나를 파싱한 뒤 구분선/장식 기호를 제거하고 줄바꿈을 정리한다.
     soup = BeautifulSoup(html_content, "html.parser")
     parts = [
-        "*" * 10,
         parse_title_text(soup),
         parse_summary_text(soup),
         parse_benefit_text(soup),
@@ -25,9 +24,43 @@ def _build_parsed_text(html_content: str) -> str:
         parse_howto_text(soup),
         parse_applicant_stats_text(soup),
         parse_company_info_text(soup),
-        "*" * 10,
     ]
-    return "\n\n".join(parts)
+
+    sections: list[str] = []
+    for part in parts:
+        if not part:
+            continue
+        lines = part.splitlines()
+        clean_lines: list[str] = []
+        last_blank = False
+        for raw_line in lines:
+            line = raw_line.strip()
+            line = line.replace("**", "")
+            line = line.replace("---", "")
+            line = line.strip()
+            if not line:
+                if clean_lines and not last_blank:
+                    clean_lines.append("")
+                last_blank = True
+                continue
+
+            only_sep = True
+            for char in line:
+                if char not in "-*":
+                    only_sep = False
+                    break
+            if only_sep:
+                continue
+
+            clean_lines.append(line)
+            last_blank = False
+
+        while clean_lines and clean_lines[-1] == "":
+            clean_lines.pop()
+        if clean_lines:
+            sections.append("\n".join(clean_lines))
+
+    return "\n\n".join(sections)
 
 
 def parsing_job_info(html_contents: list[str]) -> list[str]:

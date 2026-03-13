@@ -56,6 +56,9 @@ def generate_response(user_prompt, documents):
             [
                 "너는 취업 공고 정보 분석 전문가다.",
                 "아래 문서를 바탕으로 사용자 질문에 맞는 답변만 작성한다.",
+                "응답은 가독성이 좋게 문단을 나눠 작성한다.",
+                "토픽이 바뀌면 한 줄만 띄워 구분한다.",
+                "**, --- 같은 장식 기호는 쓰지 않는다.",
                 "문서:",
                 documents,
                 "질문:",
@@ -96,8 +99,19 @@ def generate_response(user_prompt, documents):
 
     # instruct와 user 메시지 생성
 
+    system_msg = "\n".join(
+        [
+            "너는 취업 공고 정보 분석 전문가야.",
+            "취업 공고 정보를 분석하고 요약하는 것이 너의 일이야.",
+            "응답은 가독성이 좋게 문단을 나눠 작성해.",
+            "토픽이 바뀌면 한 줄만 띄워 구분해.",
+            "**, --- 같은 장식 기호는 쓰지 마.",
+            "제공된 취업 공고 정보:",
+            documents,
+        ]
+    )
     chat = [
-        {"role": "system", "content": "너는 취업 공고 정보 분석 전문가야. 취업 공고 정보를 분석하고, 취업 공고 정보를 요약하는 것이 너의 일이야.\n제공된 취업 공고 정보:\n" + documents},
+        {"role": "system", "content": system_msg},
         {"role": "user", "content": user_prompt}
     ]
 

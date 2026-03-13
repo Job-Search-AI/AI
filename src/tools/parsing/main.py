@@ -28,7 +28,6 @@ def parsing_job_info(html_contents):
 
         # 각 파트 결과를 리스트에 담기
         parts = [
-            "*" * 10,
             parse_title_text(soup),
             parse_summary_text(soup),
             parse_benefit_text(soup),
@@ -37,11 +36,43 @@ def parsing_job_info(html_contents):
             parse_howto_text(soup),
             parse_applicant_stats_text(soup),
             parse_company_info_text(soup),
-            "*" * 10,
         ]
 
-        # 빈 줄 2개 정도로 구분하여 합치기
-        parsed_text = "\n\n".join(parts)
+        sections = []
+        for part in parts:
+            if not part:
+                continue
+            lines = part.splitlines()
+            clean_lines = []
+            last_blank = False
+            for raw_line in lines:
+                line = raw_line.strip()
+                line = line.replace("**", "")
+                line = line.replace("---", "")
+                line = line.strip()
+                if not line:
+                    if clean_lines and not last_blank:
+                        clean_lines.append("")
+                    last_blank = True
+                    continue
+
+                only_sep = True
+                for char in line:
+                    if char not in "-*":
+                        only_sep = False
+                        break
+                if only_sep:
+                    continue
+
+                clean_lines.append(line)
+                last_blank = False
+
+            while clean_lines and clean_lines[-1] == "":
+                clean_lines.pop()
+            if clean_lines:
+                sections.append("\n".join(clean_lines))
+
+        parsed_text = "\n\n".join(sections)
         job_info_list.append(parsed_text)
 
     return job_info_list
