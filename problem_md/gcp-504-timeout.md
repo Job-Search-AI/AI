@@ -72,7 +72,7 @@
 - 다음 액션:
   1. 백엔드 최신(비-Selenium) 코드가 포함된 이미지 재빌드/재배포 후 응답시간 재측정.
   2. `QUERY_CONCURRENCY` 및 `QUERY_BUSY_TIMEOUT_SECONDS` 운영값 재설정으로 큐 고착 완화.
-  3. Netlify `/api/query` 프록시 타임아웃 정책 상향 또는 SSE/비동기 패턴으로 전환.
+  3. Netlify `/api/query` 프록시 타임아웃 정책 상향 또는 Job Polling 기반 비동기 패턴으로 전환.
   4. `/query` 단계별 소요시간 로그(노드별 latency) 추가로 병목 지점 상시 관측.
 
 # 9. 추가 검증 (2026-03-13 23:40~23:50 KST)
@@ -104,7 +104,7 @@
   - Job 워커를 그래프 `stream(updates)` 기반으로 변경해 `analyzing -> collecting -> parsing -> ranking -> writing` 단계 갱신 반영.
   - `normalize_entities`에서 `incomplete`인 경우 즉시 `done(result.status=incomplete)` 처리.
   - `JOB_RESULT_TTL_SECONDS` 운영값에 하한(300초)을 적용해 최소 5분 보관 보장.
-  - 레거시 `/query/stream` 엔드포인트 및 관련 테스트/문서를 제거해 Polling 경로로 단일화.
+  - 레거시 실시간 스트림 경로 및 관련 테스트/문서를 제거해 Polling 경로로 단일화.
   - API 문서를 Job Polling 권장 흐름으로 갱신.
 - 결과:
   - `uv run pytest -q tests/test_api.py` 기준 `7 passed`.
