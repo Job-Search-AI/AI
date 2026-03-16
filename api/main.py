@@ -1,7 +1,6 @@
 import asyncio
 import os
 import time
-import urllib.request
 import uuid
 from contextlib import suppress
 from typing import Literal, TypedDict
@@ -13,7 +12,6 @@ from fastapi.responses import JSONResponse
 from src.state import Ask, Ner, Norm, Result, StrictBaseModel
 
 app = FastAPI()
-ping_task = None
 query_semaphore = None
 job_queue = None
 job_store = {}
@@ -71,15 +69,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-async def ping_loop():
-    url = os.getenv("SELF_PING_URL", "https://jobsearchai-e63j.onrender.com/health")
-    sec = int(os.getenv("SELF_PING_INTERVAL_SECONDS", "300"))
-    while True:
-        await asyncio.sleep(sec)
-        res = await asyncio.to_thread(urllib.request.urlopen, url, timeout=30)
-        res.close()
 
 
 def _build_query_state(user_input: str) -> dict[str, object]:
@@ -314,8 +303,8 @@ async def cleanup_jobs_loop() -> None:
 
 
 @app.on_event("startup")
-async def start_ping():
-    global ping_task, query_semaphore
+async def startup():
+    global query_semaphore
     global job_queue, job_store_lock, worker_tasks, cleanup_task
 
     query_limit = int(os.getenv("QUERY_CONCURRENCY", "1"))
@@ -335,20 +324,10 @@ async def start_ping():
 
     cleanup_task = asyncio.create_task(cleanup_jobs_loop())
 
-    if os.getenv("SELF_PING_ENABLED", "true") == "true":
-        ping_task = asyncio.create_task(ping_loop())
-
 
 @app.on_event("shutdown")
-async def stop_ping():
-    global ping_task
+async def shutdown():
     global cleanup_task, worker_tasks
-
-    if ping_task is not None:
-        ping_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await ping_task
-        ping_task = None
 
     for task in worker_tasks:
         task.cancel()

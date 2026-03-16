@@ -90,6 +90,14 @@ uv run langgraph dev
 - 진입점: `./src/graph.py:get_compiled_graph`
 - 환경파일: `.env`
 
+### 2.6 프론트엔드/백엔드 연동 및 E2E 테스트 방식
+
+- 프론트엔드는 별도 Netlify 배포 환경에 업로드해 배포 상태에서도 동작을 확인했다.
+- 실제 기능 검증 단계에서는 빠른 수정과 API URL 전환을 위해 프론트엔드 로컬 서버를 실행했다.
+- 백엔드는 현재 저장소의 `Dockerfile`로 이미지를 빌드한 뒤 컨테이너를 실행해 내부에서 `FastAPI` 서버를 구동했다.
+- 프론트엔드 로컬 서버와 백엔드 컨테이너 URL을 연결해 검색 요청, 응답 수신, 화면 반영까지 전체 흐름을 end-to-end로 검증했다.
+- 브라우저 자동화 검증은 `Playwright`를 사용해 실제 사용자 동선 기준으로 반복 테스트했다.
+
 ## 3. 워크플로우(머메이드)
 
 아래 다이어그램은 `src/graph.py`의 실제 노드 연결 순서를 반영한다.
@@ -266,6 +274,12 @@ AI/
 - `uvicorn`
 - `python-dotenv`
 
+### 7.6 배포/컨테이너/브라우저 테스트
+
+- `Netlify`
+- `Docker`
+- `Playwright`
+
 ## 8. 상태/설정 키 레퍼런스
 
 ### 8.1 GraphState 핵심 키
@@ -329,34 +343,43 @@ uv run python run_local.py
 uv run langgraph dev
 ```
 
-## 10. Render Free Keep-Alive (Better Stack Uptime Free)
+### 9.6 프론트-백엔드 URL 연동 통합 테스트
 
-Render free 웹 서비스는 유휴 상태가 지속되면 스핀다운될 수 있다. 이 프로젝트는 GitHub Actions keep-alive 대신 Better Stack Uptime(무료 플랜)으로 `/health`를 10분 주기로 확인한다.
+- 프론트엔드는 Netlify 배포본과 별도로 로컬 개발 서버를 실행해 테스트했다.
+- 백엔드는 `Dockerfile` 기반으로 이미지를 빌드하고 컨테이너를 실행해 API 서버를 구동했다.
+- 프론트엔드 로컬 서버가 백엔드 컨테이너 URL을 바라보도록 설정한 뒤, 검색 요청부터 응답 렌더링까지 전체 연동을 점검했다.
 
-### 10.1 Better Stack 모니터 설정
+### 9.7 Playwright E2E 테스트
 
-- Monitor 타입: `HTTP/S URL`
-- URL: `https://jobsearchai-e63j.onrender.com/health`
-- Method: `GET`
-- Check frequency: `10 minutes`
-- Timeout: `30 seconds`
-- Alert 정책(초기 권장):
-  - 이메일 알림 활성화
-  - 연속 실패 2회 기준으로 알림
+- 실제 브라우저 환경에서 검색어 입력, API 호출, 결과 렌더링, 오류 응답 처리까지 `Playwright`로 자동화 테스트했다.
+- 수동 확인과 별도로 반복 가능한 E2E 시나리오를 운영해 프론트엔드와 백엔드의 통합 동작을 함께 검증했다.
 
-### 10.2 백엔드 설정
+## 10. GCP 전체 배포 파이프라인
 
-- `render.yaml` env 설정:
-  - `SELF_PING_ENABLED=false`
-- `/health` 엔드포인트는 기존과 동일하게 `200` + `{"status":"ok"}`를 반환한다.
+이 프로젝트의 백엔드 운영 파이프라인은 `GCP` 기준으로 구성되어 있으며, `main` 브랜치 반영부터 운영 서버 교체까지 대부분 자동화되어 있다.
 
-### 10.3 운영 확인 체크리스트
+### 10.1 전체 흐름
 
-- Better Stack에서 첫 체크가 성공으로 기록되는지 확인한다.
-- 20~30분 관찰해 10분 간격으로 체크 이력이 누적되는지 확인한다.
-- GitHub Actions 탭에서 기존 keep-alive 스케줄 실행이 더 이상 발생하지 않는지 확인한다.
+1. GitHub `main` 브랜치에 코드가 푸시되면 `Cloud Build Trigger`가 자동으로 실행된다.
+2. `Cloud Build`가 현재 저장소의 `Dockerfile`로 백엔드 이미지를 빌드한다.
+3. 빌드된 이미지는 `Artifact Registry`에 빌드 태그와 `latest` 태그로 푸시된다.
+4. 이후 `Cloud Build`가 운영 `GCP VM`에 접속해 `jobsearch-api` 서비스를 재시작한다.
+5. VM의 `systemd` 서비스는 재시작 전에 최신 `latest` 이미지를 pull한 뒤 기존 컨테이너를 교체 실행한다.
+6. 외부 요청은 `Nginx`가 `HTTPS`로 받아 내부 `127.0.0.1:8000`의 FastAPI 컨테이너로 프록시한다.
 
-### 10.4 참고 문서
+### 10.2 구성 요소 요약
 
-- Better Stack Check Frequency: https://betterstack.com/docs/uptime/check-frequency/
-- Better Stack Pricing: https://betterstack.com/pricing
+- `GitHub`: 소스 저장소와 `main` 브랜치 기준 배포 시작점
+- `Cloud Build`: 이미지 빌드, Registry 푸시, VM 재시작 자동화
+- `Artifact Registry`: 운영 배포용 Docker 이미지 저장소
+- `GCP VM`: 실제 백엔드 컨테이너가 실행되는 서버
+- `systemd + Docker`: 최신 이미지 pull 및 컨테이너 교체 실행 담당
+- `Nginx`: 외부 HTTPS 요청을 내부 API 서버로 전달
+
+### 10.3 운영 검증 포인트
+
+- 새 `main` 커밋 이후 `Cloud Build`가 성공 상태로 끝나는지 확인한다.
+- `Artifact Registry`의 `latest` 태그가 최신 빌드 기준으로 갱신됐는지 확인한다.
+- VM에서 `jobsearch-api` 서비스가 정상 실행 중인지 확인한다.
+- 외부 엔드포인트 `/health`와 `/query/jobs` 호출이 정상 응답하는지 확인한다.
+- 자동 반영이 실패하면 VM에서 `jobsearch-api`를 수동 재시작해 복구할 수 있다.
