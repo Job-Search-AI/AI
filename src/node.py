@@ -20,7 +20,9 @@ from src.state import (
     RetrievalState,
     SingletonModelNodeUpdate,
 )
-from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
+from src.tools.slices.crawling_view_ajax import (
+    crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool,
+)
 from src.tools.slices.parsing import parsing_job_info as _parsing_job_info_tool
 from src.tools.slices.retrieval import search_hybrid_retriever as _search_hybrid_retriever_tool
 from src.tools.slices.llm import generate_response
@@ -299,8 +301,8 @@ def mapping_url_query_node(state: GraphState) -> dict[str, str]:
         else:
             url_base += "&" + mapped
 
-    # 기존 동작과 동일하게 학력/경력 무관 옵션을 마지막에 덧붙인다.
-    url_base += "&edu_none=y&exp_none=y"
+    # 기존 동작과 동일하게 학력/경력 무관 옵션과 페이지 개수를 마지막에 덧붙인다.
+    url_base += "&edu_none=y&exp_none=y&recruitPageCount=100"
     return {"url": url_base}
 
 
@@ -310,6 +312,8 @@ def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
 
     if not isinstance(url, str) or not url.strip():
         raise ValueError("state['url'] must be a non-empty string")
+    if "recruitPageCount=" not in url:
+        url = url + "&recruitPageCount=100"
     if max_jobs is not None and not isinstance(max_jobs, int):
         raise ValueError("state['max_jobs'] must be an int or None")
     max_jobs = int(os.getenv("MAX_JOBS_LIMIT", "10"))
@@ -417,7 +421,13 @@ def generate_user_response_node(state: GraphState) -> dict[str, str]:
             "state must include a non-empty 'retrieved_job_info_list' or 'job_info_list'"
         )
 
-    response = generate_response(query, documents)
+    top_docs = []
+    for doc in documents:
+        top_docs.append(doc)
+        if len(top_docs) >= 5:
+            break
+    fixed_doc = top_docs[0]
+    response = generate_response(query, top_docs, fixed_doc)
     return {"user_response": response}
 
 

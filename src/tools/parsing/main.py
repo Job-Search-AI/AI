@@ -11,7 +11,7 @@ from src.tools.parsing.applicant_stats import parse_applicant_stats_text
 from src.tools.parsing.title import parse_title_text
 from src.tools.parsing.metadata_converter import convert_html_list_to_metadata_list
 
-from src.tools.slices.crawling import crawl_job_html_from_saramin
+from src.tools.slices.crawling_view_ajax import crawl_job_html_from_saramin
 
 def parsing_job_info(html_contents):
     """

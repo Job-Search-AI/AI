@@ -5,13 +5,15 @@ from langchain_openai import ChatOpenAI
 
 from src.state import Reply
 
-def generate_response(user_prompt, documents):
+
+def generate_response(user_prompt, documents, fixed_doc=None):
     """
     LLM을 사용하여 응답을 생성하는 함수
     
     Args:
         user_prompt (str): 사용자 프롬프트
         documents (list: [str, str, ...]): 분석할 문서
+        fixed_doc (str | None): 반드시 추천해야 하는 리트리버 1위 문서
     
     Examples:
         user_prompt = "모집된 공고 축약해줘."
@@ -37,9 +39,18 @@ def generate_response(user_prompt, documents):
     load_dotenv(os.path.join(root_path, ".env"))
     use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
 
-    documents = "\n\n".join(documents)
+    ranked_docs = []
+    rank = 1
+    for doc in documents:
+        ranked_docs.append(f"[리트리버 {rank}위]\n{doc}")
+        rank = rank + 1
+    documents_text = "\n\n".join(ranked_docs)
+    if fixed_doc is None:
+        fixed_doc = documents[0]
+
     guide = [
-        "사용자 질문에 가장 잘 맞는 공고 1개만 추천한다.",
+        "상위 공고를 모두 참고해서 답변한다.",
+        "추천 공고는 반드시 리트리버 랭킹 1위 공고만 선택한다.",
         "제공된 문서에 있는 정보만 쓰고 없는 내용은 추측하지 않는다.",
         "공고 내용을 길게 나열하지 말고 핵심만 짧게 축약한다.",
         "왜 추천하는지 질문 기준(직무, 지역, 경력, 학력, 마감)으로 2~3문장으로 설명한다.",
@@ -60,7 +71,16 @@ def generate_response(user_prompt, documents):
             timeout=sec,
             max_retries=int(retries) if retries else None,
         )
-        prompt = "\n".join(guide + ["문서:", documents, "질문:", user_prompt])
+        prompt_lines = []
+        for line in guide:
+            prompt_lines.append(line)
+        prompt_lines.append("고정 추천 공고(리트리버 1위):")
+        prompt_lines.append(fixed_doc)
+        prompt_lines.append("상위 공고 목록(참고용):")
+        prompt_lines.append(documents_text)
+        prompt_lines.append("질문:")
+        prompt_lines.append(user_prompt)
+        prompt = "\n".join(prompt_lines)
         result = llm.with_structured_output(
             Reply,
             method="json_schema",
@@ -95,7 +115,14 @@ def generate_response(user_prompt, documents):
 
     # instruct와 user 메시지 생성
 
-    system_msg = "\n".join(guide + ["문서:", documents])
+    system_lines = []
+    for line in guide:
+        system_lines.append(line)
+    system_lines.append("고정 추천 공고(리트리버 1위):")
+    system_lines.append(fixed_doc)
+    system_lines.append("상위 공고 목록(참고용):")
+    system_lines.append(documents_text)
+    system_msg = "\n".join(system_lines)
     chat = [
         {"role": "system", "content": system_msg},
         {"role": "user", "content": user_prompt}

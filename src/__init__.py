@@ -1,7 +1,7 @@
 
 def crawl_job_html_from_saramin(*args, **kwargs):
     # src 표면을 최소화하기 위해 공개 API도 tools 레이어로 직접 연결한다.
-    from src.tools.slices.crawling import crawl_job_html_from_saramin as _fn
+    from src.tools.slices.crawling_view_ajax import crawl_job_html_from_saramin as _fn
 
     return _fn(*args, **kwargs)
 
