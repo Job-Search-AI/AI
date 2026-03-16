@@ -19,6 +19,8 @@
 - 응답의 선택 필드는 값이 없으면 `null`로 반환된다.
 - `/query`는 내부적으로 `query` 기본값을 `user_input`과 동일하게 사용한다.
 - `/query`는 내부적으로 검색 개수 기본값을 `5`로 사용한다.
+- `/query/stream`도 내부적으로 `query` 기본값을 `user_input`과 동일하게 사용한다.
+- `/query/stream`도 내부적으로 검색 개수 기본값을 `5`로 사용한다.
 
 ## 3. 엔드포인트
 
@@ -223,7 +225,89 @@ curl -sS -X POST http://localhost:8000/query \
 
 ---
 
-### 3.3 `POST /query/jobs`
+### 3.3 `POST /query/stream`
+
+검색 과정을 `Server-Sent Events(SSE)`로 단계별 전달한다.
+
+#### 요청 헤더
+
+```http
+Content-Type: application/json
+Accept: text/event-stream
+```
+
+#### 요청 본문
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `user_input` | `string` | Y | 사용자의 자연어 검색 문장 |
+
+#### 응답
+
+- Content-Type: `text/event-stream`
+- 이벤트 타입: `step`, `final`, `error`
+
+#### 이벤트 데이터 스키마
+
+| event | data 스키마 | 설명 |
+| --- | --- | --- |
+| `step` | `{ "step": string, "label"?: string }` | 진행 단계 전달 |
+| `final` | `POST /query`와 동일한 JSON | 최종 결과 전달 후 스트림 종료 |
+| `error` | `{ "message": string }` | 오류 메시지 전달 후 스트림 종료 |
+
+#### `step.step` 허용값
+
+| 값 | 의미(권장 label) |
+| --- | --- |
+| `analyzing` | 질문 분석 중 |
+| `collecting` | 공고 수집 중 |
+| `parsing` | 공고 분석 중 |
+| `ranking` | 맞춤 공고 선별 중 |
+| `writing` | 답변 작성 중 |
+
+#### 이벤트 흐름
+
+- 불완전 질의:
+  - `analyzing -> final(incomplete)`
+- 완전 질의:
+  - `analyzing -> collecting -> parsing -> ranking -> writing -> final(complete)`
+- 예외 발생:
+  - `analyzing -> error` (중간 단계 없이 즉시 `error` 가능)
+
+#### SSE 응답 예시
+
+```text
+event: step
+data: {"step":"analyzing","label":"질문 분석 중"}
+
+event: step
+data: {"step":"collecting","label":"공고 수집 중"}
+
+event: final
+data: {"status":"complete","query":"서울 백엔드 신입", ...}
+```
+
+#### 프론트 폴백/에러 처리 규칙
+
+| 상황 | 프론트 처리 |
+| --- | --- |
+| 스트림에서 `final` 수신 | 성공 종료 |
+| 스트림에서 `error` 수신 | 에러 메시지 표시, `/query` 폴백 안 함 |
+| 스트림 네트워크 실패/파싱 실패/본문 없음/`final` 없이 종료 | `/query`로 1회 자동 폴백 |
+| `/query`도 실패 | 최종 에러 표시 |
+
+#### curl 예시
+
+```bash
+curl -N -X POST http://localhost:8000/query/stream \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{"user_input":"서울 백엔드 신입 대졸 채용공고 찾아줘"}'
+```
+
+---
+
+### 3.4 `POST /query/jobs`
 
 검색 작업을 비동기로 접수한다. 요청은 즉시 큐에 적재되고 `jobId`를 반환한다.
 
@@ -276,7 +360,7 @@ curl -sS -X POST http://localhost:8000/query/jobs \
 
 ---
 
-### 3.4 `GET /query/jobs/{jobId}`
+### 3.5 `GET /query/jobs/{jobId}`
 
 비동기 검색 작업 상태를 조회한다.
 

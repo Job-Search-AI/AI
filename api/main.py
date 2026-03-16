@@ -67,16 +67,15 @@ async def ping_loop():
         res.close()
 
 
-async def _run_query_request(body: Ask) -> Result:
-    from src.graph import run_job_search_graph
+def _build_query_state(user_input: str) -> dict[str, object]:
+    state: dict[str, object] = {"user_input": user_input, "retrieval_top_k": 5}
+    if user_input.strip():
+        state["query"] = user_input
+    return state
 
-    result = await asyncio.to_thread(
-        run_job_search_graph,
-        {"user_input": body.user_input},
-    )
-    if not isinstance(result, dict):
-        raise ValueError("query result must be a dict")
 
+def _build_result(state: dict[str, object], user_input: str) -> Result:
+    result = dict(state)
     result.pop("retriever", None)
 
     entities = None
@@ -91,9 +90,13 @@ async def _run_query_request(body: Ask) -> Result:
     if status not in ("complete", "incomplete"):
         raise ValueError("query result status is invalid")
 
+    query = result.get("query", user_input)
+    if not isinstance(query, str):
+        query = user_input
+
     return Result(
-        user_input=result.get("user_input", body.user_input),
-        query=result.get("query", body.user_input),
+        user_input=result.get("user_input", user_input),
+        query=query,
         status=status,
         message=result.get("message"),
         entities=entities,
@@ -110,6 +113,19 @@ async def _run_query_request(body: Ask) -> Result:
         retrieved_scores=result.get("retrieved_scores"),
         user_response=result.get("user_response"),
     )
+
+
+async def _run_query_request(body: Ask) -> Result:
+    from src.graph import run_job_search_graph
+
+    state = _build_query_state(body.user_input)
+    result = await asyncio.to_thread(
+        run_job_search_graph,
+        state,
+    )
+    if not isinstance(result, dict):
+        raise ValueError("query result must be a dict")
+    return _build_result(result, body.user_input)
 
 
 async def _get_job_store_lock() -> asyncio.Lock:
@@ -352,10 +368,7 @@ def query_stream(body: Ask):
             text = json.dumps(jsonable_encoder(data), ensure_ascii=False)
             return f"event: {name}\ndata: {text}\n\n"
 
-        state = {"user_input": body.user_input, "retrieval_top_k": 5}
-        if body.user_input.strip():
-            state["query"] = body.user_input
-
+        state = _build_query_state(body.user_input)
         final = dict(state)
 
         try:
@@ -374,38 +387,9 @@ def query_stream(body: Ask):
                     final.update(data)
 
                     if name == "normalize_entities" and data.get("status") == "incomplete":
-                        entities = None
-                        normalized_entities = None
-                        if isinstance(final.get("entities"), dict):
-                            entities = Ner.model_validate(final["entities"])
-                        if isinstance(final.get("normalized_entities"), dict):
-                            normalized_entities = Norm.model_validate(final["normalized_entities"])
-
-                        yield event_line(
-                            "step",
-                            {"step": "need_more_info", "label": "추가 정보 확인 필요"},
-                        )
                         yield event_line(
                             "final",
-                            Result(
-                                user_input=final["user_input"],
-                                query=final.get("query", body.user_input),
-                                status=final["status"],
-                                message=final.get("message"),
-                                entities=entities,
-                                loc=final.get("지역"),
-                                job=final.get("직무"),
-                                exp=final.get("경력"),
-                                edu=final.get("학력"),
-                                missing_fields=final.get("missing_fields"),
-                                normalized_entities=normalized_entities,
-                                url=final.get("url"),
-                                crawled_count=final.get("crawled_count"),
-                                job_info_list=final.get("job_info_list"),
-                                retrieved_job_info_list=final.get("retrieved_job_info_list"),
-                                retrieved_scores=final.get("retrieved_scores"),
-                                user_response=final.get("user_response"),
-                            ).model_dump(by_alias=True),
+                            _build_result(final, body.user_input).model_dump(by_alias=True),
                         )
                         done = True
                         break
@@ -419,34 +403,9 @@ def query_stream(body: Ask):
                     if name == "search_hybrid":
                         yield event_line("step", {"step": "writing", "label": "답변 작성 중"})
                     if name == "generate_user_response":
-                        entities = None
-                        normalized_entities = None
-                        if isinstance(final.get("entities"), dict):
-                            entities = Ner.model_validate(final["entities"])
-                        if isinstance(final.get("normalized_entities"), dict):
-                            normalized_entities = Norm.model_validate(final["normalized_entities"])
-
                         yield event_line(
                             "final",
-                            Result(
-                                user_input=final["user_input"],
-                                query=final.get("query", body.user_input),
-                                status=final["status"],
-                                message=final.get("message"),
-                                entities=entities,
-                                loc=final.get("지역"),
-                                job=final.get("직무"),
-                                exp=final.get("경력"),
-                                edu=final.get("학력"),
-                                missing_fields=final.get("missing_fields"),
-                                normalized_entities=normalized_entities,
-                                url=final.get("url"),
-                                crawled_count=final.get("crawled_count"),
-                                job_info_list=final.get("job_info_list"),
-                                retrieved_job_info_list=final.get("retrieved_job_info_list"),
-                                retrieved_scores=final.get("retrieved_scores"),
-                                user_response=final.get("user_response"),
-                            ).model_dump(by_alias=True),
+                            _build_result(final, body.user_input).model_dump(by_alias=True),
                         )
                         done = True
                         break
