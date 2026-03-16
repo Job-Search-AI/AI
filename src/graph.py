@@ -19,7 +19,7 @@ from src.node import (
     search_hybrid_retriever_node,
     singleton_model_node,
 )
-from src.router import ROUTE_MAP_URL, ROUTE_NEED_MORE_INFO, route_after_normalize_entities
+from src.router import ROUTE_INCOMPLETE_END, ROUTE_MAP_URL, route_after_normalize_entities
 from src.state import GraphState
 
 _COMPILED_GRAPH: Any | None = None
@@ -99,7 +99,7 @@ def build_graph() -> StateGraph:
         "normalize_entities",
         route_after_normalize_entities,
         {
-            ROUTE_NEED_MORE_INFO: END,
+            ROUTE_INCOMPLETE_END: END,
             ROUTE_MAP_URL: "map_url",
         },
     )
