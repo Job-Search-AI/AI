@@ -260,7 +260,6 @@ Accept: text/event-stream
 | 값 | 의미(권장 label) |
 | --- | --- |
 | `analyzing` | 질문 분석 중 |
-| `need_more_info` | 추가 정보 확인 중 |
 | `collecting` | 공고 수집 중 |
 | `parsing` | 공고 분석 중 |
 | `ranking` | 맞춤 공고 선별 중 |
@@ -269,7 +268,7 @@ Accept: text/event-stream
 #### 이벤트 흐름
 
 - 불완전 질의:
-  - `analyzing -> need_more_info -> final(incomplete)`
+  - `analyzing -> final(incomplete)`
 - 완전 질의:
   - `analyzing -> collecting -> parsing -> ranking -> writing -> final(complete)`
 - 예외 발생:

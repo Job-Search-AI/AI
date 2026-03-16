@@ -388,10 +388,6 @@ def query_stream(body: Ask):
 
                     if name == "normalize_entities" and data.get("status") == "incomplete":
                         yield event_line(
-                            "step",
-                            {"step": "need_more_info", "label": "추가 정보 확인 중"},
-                        )
-                        yield event_line(
                             "final",
                             _build_result(final, body.user_input).model_dump(by_alias=True),
                         )

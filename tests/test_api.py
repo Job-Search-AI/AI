@@ -351,8 +351,8 @@ def test_query_stream_incomplete_events_and_final_matches_query(monkeypatch):
         if item["event"] == "error":
             error_data = item["data"]
 
-    assert step_values == ["analyzing", "need_more_info"]
-    assert step_labels == ["질문 분석 중", "추가 정보 확인 중"]
+    assert step_values == ["analyzing"]
+    assert step_labels == ["질문 분석 중"]
     assert error_data is None
     assert isinstance(final_data, dict)
     assert final_data["status"] == "incomplete"
