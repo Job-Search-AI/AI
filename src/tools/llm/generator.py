@@ -1,7 +1,8 @@
 from src.tools.slices.llm import generate_response as run
 
-def generate_response(user_prompt, documents):
-    return run(user_prompt, documents)
+
+def generate_response(user_prompt, documents, fixed_doc=None):
+    return run(user_prompt, documents, fixed_doc)
 
 if __name__ == "__main__":
     user_prompt = "취업 공고 정보를 분석하고, 취업 공고 정보를 요약해줘."

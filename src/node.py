@@ -417,7 +417,13 @@ def generate_user_response_node(state: GraphState) -> dict[str, str]:
             "state must include a non-empty 'retrieved_job_info_list' or 'job_info_list'"
         )
 
-    response = generate_response(query, documents)
+    top_docs = []
+    for doc in documents:
+        top_docs.append(doc)
+        if len(top_docs) >= 5:
+            break
+    fixed_doc = top_docs[0]
+    response = generate_response(query, top_docs, fixed_doc)
     return {"user_response": response}
 
 
