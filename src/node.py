@@ -299,8 +299,8 @@ def mapping_url_query_node(state: GraphState) -> dict[str, str]:
         else:
             url_base += "&" + mapped
 
-    # 기존 동작과 동일하게 학력/경력 무관 옵션을 마지막에 덧붙인다.
-    url_base += "&edu_none=y&exp_none=y"
+    # 기존 동작과 동일하게 학력/경력 무관 옵션과 페이지 개수를 마지막에 덧붙인다.
+    url_base += "&edu_none=y&exp_none=y&recruitPageCount=100"
     return {"url": url_base}
 
 
@@ -310,6 +310,8 @@ def crawl_job_html_from_saramin(state: GraphState) -> CrawlingState:
 
     if not isinstance(url, str) or not url.strip():
         raise ValueError("state['url'] must be a non-empty string")
+    if "recruitPageCount=" not in url:
+        url = url + "&recruitPageCount=100"
     if max_jobs is not None and not isinstance(max_jobs, int):
         raise ValueError("state['max_jobs'] must be an int or None")
     max_jobs = int(os.getenv("MAX_JOBS_LIMIT", "10"))
