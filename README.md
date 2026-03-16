@@ -32,7 +32,7 @@
 
 실행 진입점은 `run_local.py`의 `run()`이며 내부적으로 `src/graph.py::run_job_search_graph()`를 호출한다. 그래프는 조건 분기를 포함해 다음 두 흐름 중 하나로 종료된다.
 
-- `정보 부족 종료`: `normalize_entities` 후 `need_more_info`로 `END`
+- `정보 부족 종료`: `normalize_entities` 후 `incomplete_end`로 `END`
 - `검색 완료 종료`: `map_url -> crawl_html -> parse_job_info -> search_hybrid -> generate_user_response -> END`
 
 ## 2. 실행방법
@@ -108,7 +108,7 @@ flowchart TD
     singleton_model --> predict_entities[predict_entities]
     predict_entities --> normalize_entities[normalize_entities]
     normalize_entities --> route{route_after_normalize_entities}
-    route -->|need_more_info| END1((END))
+    route -->|incomplete_end| END1((END))
     route -->|map_url| map_url[map_url]
     map_url --> crawl_html[crawl_html]
     crawl_html --> parse_job_info[parse_job_info]
@@ -132,7 +132,7 @@ flowchart TD
 
 라우팅 함수 `route_after_normalize_entities`는 `status`, `missing_fields`, `normalized_entities`를 기준으로 다음 노드를 결정한다.
 
-- `ROUTE_NEED_MORE_INFO`: 정보 부족 분기
+- `ROUTE_INCOMPLETE_END`: 정보 부족 종료 분기
 - `ROUTE_MAP_URL`: 검색 진행 분기
 
 ## 5. 최종 출력
