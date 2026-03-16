@@ -95,3 +95,20 @@
   - 사람인 상세 페이지는 JS 렌더 이후에 핵심 DOM이 채워지는 구조로 보이며,
   - 단순 requests(raw HTML)만으로는 현재 선택자 기준 데이터 추출이 실패한다.
   - 즉, Selenium 제거 시 성능은 개선될 수 있어도 정확도/수집률 회귀 위험이 매우 크다.
+
+# 10. 후속 조치 기록 (2026-03-16 KST)
+
+- 조치:
+  - 백엔드 Job API 응답을 `job_id + jobId` 병행 형태로 확장.
+  - Job 상태에 `step`, `step_label` 필드를 추가해 Polling 기반 진행률 표시에 대응.
+  - Job 워커를 그래프 `stream(updates)` 기반으로 변경해 `analyzing -> collecting -> parsing -> ranking -> writing` 단계 갱신 반영.
+  - `normalize_entities`에서 `incomplete`인 경우 즉시 `done(result.status=incomplete)` 처리.
+  - `JOB_RESULT_TTL_SECONDS` 운영값에 하한(300초)을 적용해 최소 5분 보관 보장.
+  - 레거시 `/query/stream` 엔드포인트 및 관련 테스트/문서를 제거해 Polling 경로로 단일화.
+  - API 문서를 Job Polling 권장 흐름으로 갱신.
+- 결과:
+  - `uv run pytest -q tests/test_api.py` 기준 `7 passed`.
+  - 검증 항목에 `job_id/jobId` 호환, running 단계 전이, `done(incomplete)`, TTL 하한 동작이 포함됨.
+- 다음 액션:
+  1. 프론트 `/api/query/start`, `/api/query/status` 프록시를 실제 배포 브랜치에 연결해 종단 간 검증.
+  2. 운영 환경에서 Job 상태 조회 트래픽 대비 메모리 사용량(`job_store`) 모니터링.

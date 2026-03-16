@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import time
 import urllib.request
@@ -8,9 +7,8 @@ from contextlib import suppress
 from typing import Literal, TypedDict
 
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 
 from src.state import Ask, Ner, Norm, Result, StrictBaseModel
 
@@ -25,16 +23,31 @@ cleanup_task = None
 
 
 QueryJobState = Literal["queued", "running", "done", "failed"]
+QueryStep = Literal["queued", "analyzing", "collecting", "parsing", "ranking", "writing"]
+
+STEP_LABELS: dict[QueryStep, str] = {
+    "queued": "대기열 처리 중",
+    "analyzing": "질문 분석 중",
+    "collecting": "공고 수집 중",
+    "parsing": "공고 분석 중",
+    "ranking": "맞춤 공고 선별 중",
+    "writing": "답변 작성 중",
+}
+
+NODE_STEP_MAP: dict[str, QueryStep] = {
+    "map_url": "collecting",
+    "crawl_html": "parsing",
+    "parse_job_info": "ranking",
+    "search_hybrid": "writing",
+}
 
 
-class QueryJobAccepted(StrictBaseModel):
-    jobId: str
-    status: Literal["queued"]
-
-
-class QueryJobStatus(StrictBaseModel):
+class QueryJobEnvelope(StrictBaseModel):
+    job_id: str
     jobId: str
     status: QueryJobState
+    step: QueryStep | None = None
+    step_label: str | None = None
     result: Result | None = None
     message: str | None = None
 
@@ -47,6 +60,8 @@ class JobRecord(TypedDict):
     updated_at: float
     result: Result | None
     message: str | None
+    step: QueryStep | None
+    step_label: str | None
 
 
 app.add_middleware(
@@ -146,6 +161,8 @@ async def _set_job_status(
     status: QueryJobState,
     result: Result | None = None,
     message: str | None = None,
+    step: QueryStep | None = None,
+    step_label: str | None = None,
 ) -> None:
     lock = await _get_job_store_lock()
     async with lock:
@@ -156,6 +173,8 @@ async def _set_job_status(
         record["updated_at"] = time.time()
         record["result"] = result
         record["message"] = message
+        record["step"] = step
+        record["step_label"] = step_label
 
 
 async def _get_job_record(job_id: str) -> JobRecord | None:
@@ -172,7 +191,79 @@ async def _get_job_record(job_id: str) -> JobRecord | None:
             "updated_at": record["updated_at"],
             "result": record["result"],
             "message": record["message"],
+            "step": record["step"],
+            "step_label": record["step_label"],
         }
+
+
+async def _run_query_job(job_id: str, user_input: str) -> Result:
+    from src.graph import get_compiled_graph
+
+    loop = asyncio.get_running_loop()
+    step_queue: asyncio.Queue[tuple[QueryStep, str]] = asyncio.Queue()
+    state = _build_query_state(user_input)
+
+    def push_step(step: QueryStep) -> None:
+        label = STEP_LABELS[step]
+        loop.call_soon_threadsafe(step_queue.put_nowait, (step, label))
+
+    def run_stream() -> Result:
+        graph = get_compiled_graph()
+        final = dict(state)
+        push_step("analyzing")
+
+        for chunk in graph.stream(state, stream_mode="updates"):
+            if not isinstance(chunk, dict):
+                continue
+
+            for name, data in chunk.items():
+                if not isinstance(data, dict):
+                    continue
+
+                final.update(data)
+
+                if name == "normalize_entities" and data.get("status") == "incomplete":
+                    return _build_result(final, user_input)
+
+                step = NODE_STEP_MAP.get(name)
+                if step is not None:
+                    push_step(step)
+
+                if name == "generate_user_response":
+                    return _build_result(final, user_input)
+
+        return _build_result(final, user_input)
+
+    thread_task = asyncio.create_task(asyncio.to_thread(run_stream))
+
+    while not thread_task.done():
+        try:
+            step, label = await asyncio.wait_for(step_queue.get(), timeout=0.1)
+        except asyncio.TimeoutError:
+            continue
+        await _set_job_status(job_id, status="running", step=step, step_label=label)
+
+    while not step_queue.empty():
+        step, label = step_queue.get_nowait()
+        await _set_job_status(job_id, status="running", step=step, step_label=label)
+
+    return await thread_task
+
+
+def _build_job_envelope(record: JobRecord) -> QueryJobEnvelope:
+    message = record["message"]
+    if record["status"] == "failed" and (message is None or not message):
+        message = "job failed"
+
+    return QueryJobEnvelope(
+        job_id=record["job_id"],
+        jobId=record["job_id"],
+        status=record["status"],
+        step=record["step"],
+        step_label=record["step_label"],
+        result=record["result"],
+        message=message,
+    )
 
 
 async def query_worker() -> None:
@@ -189,9 +280,7 @@ async def query_worker() -> None:
             if record is None:
                 continue
 
-            await _set_job_status(job_id, status="running")
-            body = Ask(user_input=record["user_input"])
-            result = await _run_query_request(body)
+            result = await _run_query_job(job_id, record["user_input"])
             await _set_job_status(job_id, status="done", result=result)
         except Exception as exc:
             await _set_job_status(job_id, status="failed", message=str(exc))
@@ -202,6 +291,8 @@ async def query_worker() -> None:
 
 async def cleanup_jobs_loop() -> None:
     ttl = int(os.getenv("JOB_RESULT_TTL_SECONDS", "600"))
+    if ttl < 300:
+        ttl = 300
     interval = int(os.getenv("JOB_CLEANUP_INTERVAL_SECONDS", "30"))
 
     while True:
@@ -310,7 +401,7 @@ async def query(body: Ask):
             query_semaphore.release()
 
 
-@app.post("/query/jobs", response_model=QueryJobAccepted, status_code=202)
+@app.post("/query/jobs", response_model=QueryJobEnvelope, status_code=202)
 async def create_query_job(body: Ask):
     global job_queue
 
@@ -327,16 +418,24 @@ async def create_query_job(body: Ask):
         "updated_at": now,
         "result": None,
         "message": None,
+        "step": "queued",
+        "step_label": STEP_LABELS["queued"],
     }
     await _set_job_record(job_id, record)
     await job_queue.put(job_id)
 
-    return QueryJobAccepted(jobId=job_id, status="queued")
+    return QueryJobEnvelope(
+        job_id=job_id,
+        jobId=job_id,
+        status="queued",
+        step="queued",
+        step_label=STEP_LABELS["queued"],
+    )
 
 
 @app.get(
     "/query/jobs/{job_id}",
-    response_model=QueryJobStatus,
+    response_model=QueryJobEnvelope,
     responses={404: {"description": "Job not found"}},
 )
 async def get_query_job(job_id: str):
@@ -344,79 +443,8 @@ async def get_query_job(job_id: str):
     if record is None:
         return JSONResponse(status_code=404, content={"message": "job not found"})
 
-    status = record["status"]
-    if status == "queued" or status == "running":
-        return QueryJobStatus(jobId=job_id, status=status)
+    if record["status"] == "done" and record["result"] is None:
+        record["status"] = "failed"
+        record["message"] = "job result missing"
 
-    if status == "done":
-        if record["result"] is None:
-            return QueryJobStatus(jobId=job_id, status="failed", message="job result missing")
-        return QueryJobStatus(jobId=job_id, status="done", result=record["result"])
-
-    message = record["message"]
-    if message is None or not message:
-        message = "job failed"
-    return QueryJobStatus(jobId=job_id, status="failed", message=message)
-
-
-@app.post("/query/stream")
-def query_stream(body: Ask):
-    from src.graph import get_compiled_graph
-
-    def event_stream():
-        def event_line(name: str, data: dict):
-            text = json.dumps(jsonable_encoder(data), ensure_ascii=False)
-            return f"event: {name}\ndata: {text}\n\n"
-
-        state = _build_query_state(body.user_input)
-        final = dict(state)
-
-        try:
-            yield event_line("step", {"step": "analyzing", "label": "질문 분석 중"})
-            graph = get_compiled_graph()
-            done = False
-
-            for chunk in graph.stream(state, stream_mode="updates"):
-                if not isinstance(chunk, dict):
-                    continue
-
-                for name, data in chunk.items():
-                    if not isinstance(data, dict):
-                        continue
-
-                    final.update(data)
-
-                    if name == "normalize_entities" and data.get("status") == "incomplete":
-                        yield event_line(
-                            "final",
-                            _build_result(final, body.user_input).model_dump(by_alias=True),
-                        )
-                        done = True
-                        break
-
-                    if name == "map_url":
-                        yield event_line("step", {"step": "collecting", "label": "공고 수집 중"})
-                    if name == "crawl_html":
-                        yield event_line("step", {"step": "parsing", "label": "공고 분석 중"})
-                    if name == "parse_job_info":
-                        yield event_line("step", {"step": "ranking", "label": "맞춤 공고 선별 중"})
-                    if name == "search_hybrid":
-                        yield event_line("step", {"step": "writing", "label": "답변 작성 중"})
-                    if name == "generate_user_response":
-                        yield event_line(
-                            "final",
-                            _build_result(final, body.user_input).model_dump(by_alias=True),
-                        )
-                        done = True
-                        break
-
-                if done:
-                    break
-        except Exception as exc:
-            yield event_line("error", {"message": str(exc)})
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
-    )
+    return _build_job_envelope(record)
