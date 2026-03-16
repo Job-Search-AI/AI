@@ -41,7 +41,7 @@
 
 - `Python`: `>=3.12,<3.13` (`pyproject.toml` 기준)
 - `패키지 매니저`: `uv`
-- `브라우저 자동화`: `Selenium` + `webdriver-manager` + `Chrome`
+- `크롤링 방식`: `requests` + `beautifulsoup4` + `view-ajax` + `ThreadPoolExecutor(3)`
 - `환경변수 파일`: 프로젝트 루트의 `.env`
 
 ### 2.2 의존성 설치
@@ -125,7 +125,7 @@ flowchart TD
 | `predict_entities` | `user_input` | `predict_ner()`로 `지역/직무/경력/학력`을 추출한다. 설정값에 따라 OpenAI 구조화 출력 또는 BERT+CRF 분기를 사용한다. | `entities`, `지역`, `직무`, `경력`, `학력` |
 | `normalize_entities` | `entities` 또는 개별 슬롯 키 | 동의어 사전(`data/url_exchager/synonym_dict.json`)으로 표준화하고 누락 슬롯을 검사한다. | `status`, `message`, `missing_fields`, `normalized_entities` |
 | `map_url` | `normalized_entities` | 슬롯 값을 `query_map.json` 코드로 변환해 사람인 검색 URL을 조합하고 고정 파라미터(`edu_none=y`, `exp_none=y`)를 추가한다. | `url` |
-| `crawl_html` | `url`, `max_jobs`(옵션) | Selenium으로 검색 결과의 상세 페이지에 순차 접근해 핵심 HTML 블록을 수집한다. | `html_contents`, `crawled_count` |
+| `crawl_html` | `url`, `max_jobs`(옵션) | 목록 HTML에서 `rec_idx`를 추출한 뒤 `view-ajax` 상세를 3개 워커로 병렬 수집해 핵심 HTML 블록을 조합한다. | `html_contents`, `crawled_count` |
 | `parse_job_info` | `html_contents` | 제목/요약/복리후생/위치/상세/접수/지원자/기업정보를 텍스트 문서로 파싱한다. | `job_info_list` |
 | `search_hybrid` | `query`, `job_info_list`, `retriever`, 검색 옵션 키들 | BM25와 임베딩 결과를 결합(`weighted_average` 또는 `rrf`)해 상위 문서를 반환한다. | `retriever`, `retrieved_job_info_list`, `retrieved_scores` |
 | `generate_user_response` | `query`, `retrieved_job_info_list`(없으면 `job_info_list` fallback) | 검색 결과 문서를 기반으로 최종 사용자 응답을 생성한다. | `user_response` |
