@@ -38,6 +38,21 @@ def generate_response(user_prompt, documents):
     use_openai = os.getenv("USE_OPENAI_MODELS", "false").lower() == "true"
 
     documents = "\n\n".join(documents)
+    guide = [
+        "너는 취업 공고 묶음을 짧게 요약하는 전문가다.",
+        "제공된 문서에 있는 정보만 사용한다.",
+        "문서에 없는 정보는 추측하지 않는다.",
+        "전체 공고의 공통 내용과 차이를 짧게 요약한다.",
+        "공고의 직무 내용, 경력, 학력, 근무지 경향을 먼저 묶어서 설명한다.",
+        "모든 공고를 하나씩 나열하거나 보고서처럼 길게 설명하지 않는다.",
+        "사용자 질문과 얼마나 맞는지, 무엇이 맞고 무엇이 덜 맞는지 간단히 알려준다.",
+        "대표 예시가 꼭 필요할 때만 1개나 2개만 짧게 언급한다.",
+        "응답은 한국어 평문으로 작성한다.",
+        "한 문장이 끝날 때마다 줄바꿈한다.",
+        "번호 목록보다 짧은 문장과 짧은 문단을 우선한다.",
+        "토픽이 바뀌면 한 줄만 띄워 구분한다.",
+        "**, --- 같은 장식 기호는 쓰지 않는다.",
+    ]
 
     if use_openai:
         timeout = os.getenv("OPENAI_TIMEOUT_SECONDS")
@@ -52,19 +67,7 @@ def generate_response(user_prompt, documents):
             timeout=sec,
             max_retries=int(retries) if retries else None,
         )
-        prompt = "\n".join(
-            [
-                "너는 취업 공고 정보 분석 전문가다.",
-                "아래 문서를 바탕으로 사용자 질문에 맞는 답변만 작성한다.",
-                "응답은 가독성이 좋게 문단을 나눠 작성한다.",
-                "토픽이 바뀌면 한 줄만 띄워 구분한다.",
-                "**, --- 같은 장식 기호는 쓰지 않는다.",
-                "문서:",
-                documents,
-                "질문:",
-                user_prompt,
-            ]
-        )
+        prompt = "\n".join(guide + ["문서:", documents, "질문:", user_prompt])
         result = llm.with_structured_output(
             Reply,
             method="json_schema",
@@ -99,17 +102,7 @@ def generate_response(user_prompt, documents):
 
     # instruct와 user 메시지 생성
 
-    system_msg = "\n".join(
-        [
-            "너는 취업 공고 정보 분석 전문가야.",
-            "취업 공고 정보를 분석하고 요약하는 것이 너의 일이야.",
-            "응답은 가독성이 좋게 문단을 나눠 작성해.",
-            "토픽이 바뀌면 한 줄만 띄워 구분해.",
-            "**, --- 같은 장식 기호는 쓰지 마.",
-            "제공된 취업 공고 정보:",
-            documents,
-        ]
-    )
+    system_msg = "\n".join(guide + ["문서:", documents])
     chat = [
         {"role": "system", "content": system_msg},
         {"role": "user", "content": user_prompt}
