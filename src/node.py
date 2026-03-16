@@ -20,7 +20,9 @@ from src.state import (
     RetrievalState,
     SingletonModelNodeUpdate,
 )
-from src.tools.slices.crawling import crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool
+from src.tools.slices.crawling_view_ajax import (
+    crawl_job_html_from_saramin as _crawl_job_html_from_saramin_tool,
+)
 from src.tools.slices.parsing import parsing_job_info as _parsing_job_info_tool
 from src.tools.slices.retrieval import search_hybrid_retriever as _search_hybrid_retriever_tool
 from src.tools.slices.llm import generate_response
