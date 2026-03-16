@@ -7,6 +7,30 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+TITLE_FILTER_WORDS = [
+    "교육생 모집",
+    "교육생",
+    "수강생 모집",
+    "수강생",
+    "연수생 모집",
+    "연수생",
+    "훈련생 모집",
+    "훈련생",
+    "참여자 모집",
+    "국비지원",
+    "국비무료",
+    "전액국비",
+    "국비",
+    "kdt",
+    "취업과정",
+    "교육과정",
+    "양성과정",
+    "훈련과정",
+    "부트캠프",
+    "내일배움",
+    "아카데미",
+]
+
 
 # 셀레니움을 사용한 HTML 데이터 추출
 def crawl_job_html_from_saramin(url, max_count=None):
@@ -81,6 +105,22 @@ def crawl_job_html_from_saramin(url, max_count=None):
                         except Exception as e:
                             print(f"목록 제목 추출 실패: {e}")
 
+                        blocked = False
+                        blocked_word = ""
+                        title_for_filter = list_title_text.lower().replace(" ", "")
+                        for word in TITLE_FILTER_WORDS:
+                            word_for_filter = word.lower().replace(" ", "")
+                            if word_for_filter in title_for_filter:
+                                blocked = True
+                                blocked_word = word
+                                break
+
+                        if blocked:
+                            print("목록 제목 키워드 필터로 스킵:")
+                            print(f"  목록 제목: {list_title_text}")
+                            print(f"  매칭 키워드: {blocked_word}")
+                            continue
+
                         if href:
                             detail_items.append({"href": href, "list_title": list_title_text})
                     except Exception as e:
@@ -90,8 +130,8 @@ def crawl_job_html_from_saramin(url, max_count=None):
                 # 상세 페이지 접속 및 내용 수집
                 index = 0
                 for item in detail_items:
-                    # 최대 개수 없을시 건너뛰거나, 최대 개수 초과 시 종료
-                    if max_count is not None and index > max_count - 1:
+                    # 수집 성공 개수가 최대치에 도달하면 종료
+                    if max_count is not None and len(details_html_parts) >= max_count:
                         return details_html_parts
                     href = item.get("href")
 
@@ -124,6 +164,23 @@ def crawl_job_html_from_saramin(url, max_count=None):
                                 detail_title_text = title_el.text.strip()
                             except Exception as e:
                                 print(f"상세 제목 추출 실패: {e}")
+
+                            blocked = False
+                            blocked_word = ""
+                            title_for_filter = detail_title_text.lower().replace(" ", "")
+                            for word in TITLE_FILTER_WORDS:
+                                word_for_filter = word.lower().replace(" ", "")
+                                if word_for_filter in title_for_filter:
+                                    blocked = True
+                                    blocked_word = word
+                                    break
+
+                            if blocked:
+                                print("상세 제목 키워드 필터로 스킵:")
+                                print(f"  목록 제목: {list_title}")
+                                print(f"  상세 제목: {detail_title_text}")
+                                print(f"  매칭 키워드: {blocked_word}")
+                                continue
 
                             # 목록 제목과 일치 여부 판단 (공백 정규화 최소화)
                             is_match = False
@@ -285,7 +342,7 @@ def crawl_job_html_from_saramin(url, max_count=None):
                                 )
 
                                 details_html_parts.append(combined_html)
-                                print(f"공고 {index} 수집 완료")
+                                print(f"공고 수집 완료 ({len(details_html_parts)})")
                             else:
                                 print("제목 불일치로 스킵:")
                                 print(f"  목록 제목: {list_title}")
