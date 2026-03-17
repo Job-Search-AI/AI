@@ -1,385 +1,344 @@
-# AI 기반 채용공고 검색 시스템 보고서
+# AI 기반 채용공고 검색 시스템
 
-이 문서는 `LangGraph` 기반 채용공고 검색 파이프라인의 구조, 실행, 워크플로우, 노드 단위 동작, 출력 형식, 디렉토리 설계를 한 번에 이해할 수 있도록 정리한 프로젝트 보고서다.
+> `develop` 브랜치 기준 README  
+> 자연어 기반 채용공고 검색을 위해 슬롯 추출, 정규화, 크롤링, 하이브리드 검색, 응답 생성을 결합한 AI 채용 검색 시스템
 
-## 1. 프로젝트 소개
+[프론트엔드 데모 바로가기](https://job-search-ai.netlify.app/)
 
-### 1.1 목적
-
-사용자가 자연어로 입력한 채용 검색 요청에서 핵심 조건을 추출하고, 이를 바탕으로 사람인 검색 URL 생성, 공고 수집, 공고 파싱, 하이브리드 검색(BM25+임베딩), 최종 응답 생성을 자동화한다.
-
-### 1.2 문제 정의
-
-기존 키워드 검색은 사용자의 복합 질의를 충분히 반영하지 못한다. 예를 들어 `서울 백엔드 신입 대졸`과 같은 문장은 지역, 직무, 경력, 학력 슬롯을 동시에 만족해야 하지만, 단일 키워드 매칭만으로는 검색 정확도가 낮아진다.
-
-### 1.3 핵심 가치
-
-- `슬롯 기반 질의 이해`: `지역/직무/경력/학력` 4개 슬롯을 기준으로 질의를 구조화한다.
-- `결손 정보 분기`: 필수 정보가 부족하면 즉시 `incomplete` 상태로 종료해 후속 입력을 유도한다.
-- `실행 경로 표준화`: `src/graph.py`를 중심으로 모든 단계를 노드 체인으로 고정한다.
-- `재현 가능한 검색`: URL 매핑 규칙(`data/url_exchager/query_map.json`)과 동의어 정규화(`data/url_exchager/synonym_dict.json`)를 데이터 파일로 관리한다.
-
-### 1.4 핵심 기능
-
-- NER 기반 슬롯 추출(`src/node.py::predict_ner`)
-- 슬롯 정규화 및 누락 검증(`src/tools/slices/entity_normalizer.py`)
-- URL 매핑 및 크롤링(`src/node.py::mapping_url_query_node`, `crawl_job_html_from_saramin`)
-- HTML 파싱 및 검색 문서 생성(`src/tools/slices/parsing.py`)
-- 하이브리드 검색 및 랭킹(`src/tools/slices/retrieval.py`)
-- 최종 자연어 응답 생성(`src/tools/slices/llm.py`)
-
-### 1.5 파이프라인 개요
-
-실행 진입점은 `run_local.py`의 `run()`이며 내부적으로 `src/graph.py::run_job_search_graph()`를 호출한다. 그래프는 조건 분기를 포함해 다음 두 흐름 중 하나로 종료된다.
-
-- `정보 부족 종료`: `normalize_entities` 후 `incomplete_end`로 `END`
-- `검색 완료 종료`: `map_url -> crawl_html -> parse_job_info -> search_hybrid -> generate_user_response -> END`
-
-## 2. 실행방법
-
-### 2.1 환경 요구사항
-
-- `Python`: `>=3.12,<3.13` (`pyproject.toml` 기준)
-- `패키지 매니저`: `uv`
-- `크롤링 방식`: `requests` + `beautifulsoup4` + `view-ajax` + `ThreadPoolExecutor(3)`
-- `환경변수 파일`: 프로젝트 루트의 `.env`
-
-### 2.2 의존성 설치
-
-```bash
-uv sync
-```
-
-개발용 도구까지 함께 설치하려면 다음을 사용한다.
-
-```bash
-uv sync --group dev
-```
-
-### 2.3 환경변수 준비
-
-`.env`에 최소 아래 키들을 설정한다.
-
-- `USE_OPENAI_MODELS`
-- `OPENAI_API_KEY` (OpenAI 모드 사용 시)
-- `NER_MODEL_NAME`
-- `RESPONSE_MODEL_NAME`
-- `OPENAI_TIMEOUT_SECONDS`
-- `OPENAI_MAX_RETRIES`
-- `OPENAI_BASE_URL`
-- `MAX_JOBS`
-- `TOP_K`
-
-### 2.4 로컬 단일 실행
-
-```bash
-uv run python run_local.py
-```
-
-기본 입력 문장은 `run_local.py` 내부에 하드코딩되어 있으며, 실행 시 최종 상태 딕셔너리가 출력된다.
-
-### 2.5 LangGraph 개발 서버 실행
-
-```bash
-uv run langgraph dev
-```
-
-그래프 엔트리는 `langgraph.json`의 아래 설정을 사용한다.
-
-- 그래프 이름: `job_search`
-- 진입점: `./src/graph.py:get_compiled_graph`
-- 환경파일: `.env`
-
-### 2.6 프론트엔드/백엔드 연동 및 E2E 테스트 방식
-
-- 프론트엔드는 별도 Netlify 배포 환경에 업로드해 배포 상태에서도 동작을 확인했다.
-- 실제 기능 검증 단계에서는 빠른 수정과 API URL 전환을 위해 프론트엔드 로컬 서버를 실행했다.
-- 백엔드는 현재 저장소의 `Dockerfile`로 이미지를 빌드한 뒤 컨테이너를 실행해 내부에서 `FastAPI` 서버를 구동했다.
-- 프론트엔드 로컬 서버와 백엔드 컨테이너 URL을 연결해 검색 요청, 응답 수신, 화면 반영까지 전체 흐름을 end-to-end로 검증했다.
-- 브라우저 자동화 검증은 `Playwright`를 사용해 실제 사용자 동선 기준으로 반복 테스트했다.
-
-## 3. 워크플로우(머메이드)
-
-아래 다이어그램은 `src/graph.py`의 실제 노드 연결 순서를 반영한다.
-
-```mermaid
-flowchart TD
-    START((START)) --> singleton_model[singleton_model]
-    singleton_model --> predict_entities[predict_entities]
-    predict_entities --> normalize_entities[normalize_entities]
-    normalize_entities --> route{route_after_normalize_entities}
-    route -->|incomplete_end| END1((END))
-    route -->|map_url| map_url[map_url]
-    map_url --> crawl_html[crawl_html]
-    crawl_html --> parse_job_info[parse_job_info]
-    parse_job_info --> search_hybrid[search_hybrid]
-    search_hybrid --> generate_user_response[generate_user_response]
-    generate_user_response --> END2((END))
-```
-
-## 4. 노드별 상세 동작
-
-| 노드 | 입력 상태 키 | 상세 처리 | 출력 상태 키 |
-| --- | --- | --- | --- |
-| `singleton_model` | `bert_model_name`(옵션) | 모델 캐시를 초기화/재사용하고 실행 장치와 NER/임베딩/응답 생성 함수를 준비한다. | `bert_model_name`, `device`, `bert_model`, `tokenizer`, `crf`, `embedding_model`, `llm` |
-| `predict_entities` | `user_input` | `predict_ner()`로 `지역/직무/경력/학력`을 추출한다. 설정값에 따라 OpenAI 구조화 출력 또는 BERT+CRF 분기를 사용한다. | `entities`, `지역`, `직무`, `경력`, `학력` |
-| `normalize_entities` | `entities` 또는 개별 슬롯 키 | 동의어 사전(`data/url_exchager/synonym_dict.json`)으로 표준화하고 누락 슬롯을 검사한다. | `status`, `message`, `missing_fields`, `normalized_entities` |
-| `map_url` | `normalized_entities` | 슬롯 값을 `query_map.json` 코드로 변환해 사람인 검색 URL을 조합하고 고정 파라미터(`edu_none=y`, `exp_none=y`)를 추가한다. | `url` |
-| `crawl_html` | `url`, `max_jobs`(옵션) | 목록 HTML에서 `rec_idx`를 추출한 뒤 `view-ajax` 상세를 3개 워커로 병렬 수집해 핵심 HTML 블록을 조합한다. | `html_contents`, `crawled_count` |
-| `parse_job_info` | `html_contents` | 제목/요약/복리후생/위치/상세/접수/지원자/기업정보를 텍스트 문서로 파싱한다. | `job_info_list` |
-| `search_hybrid` | `query`, `job_info_list`, `retriever`, 검색 옵션 키들 | BM25와 임베딩 결과를 결합(`weighted_average` 또는 `rrf`)해 상위 문서를 반환한다. | `retriever`, `retrieved_job_info_list`, `retrieved_scores` |
-| `generate_user_response` | `query`, `retrieved_job_info_list`(없으면 `job_info_list` fallback) | 검색 결과 문서를 기반으로 최종 사용자 응답을 생성한다. | `user_response` |
-
-라우팅 함수 `route_after_normalize_entities`는 `status`, `missing_fields`, `normalized_entities`를 기준으로 다음 노드를 결정한다.
-
-- `ROUTE_INCOMPLETE_END`: 정보 부족 종료 분기
-- `ROUTE_MAP_URL`: 검색 진행 분기
-
-## 5. 최종 출력
-
-그래프 실행 결과는 `GraphState` 기반 딕셔너리다. 주요 종료 시나리오는 아래 두 가지다.
-
-### 5.1 시나리오 A: 정보 부족 종료 (`status=incomplete`)
-
-```json
-{
-  "user_input": "백엔드 신입 채용공고 찾아줘",
-  "query": "백엔드 신입 채용공고 찾아줘",
-  "entities": {
-    "지역": "",
-    "직무": "백엔드",
-    "경력": "신입",
-    "학력": ""
-  },
-  "status": "incomplete",
-  "message": "지역, 학력 정보를 알려주세요.",
-  "missing_fields": ["지역", "학력"],
-  "normalized_entities": {
-    "지역": null,
-    "직무": "백엔드/서버개발",
-    "경력": "신입",
-    "학력": null
-  }
-}
-```
-
-### 5.2 시나리오 B: 전체 파이프라인 완료 (`user_response` 포함)
-
-```json
-{
-  "user_input": "서울 AI 엔지니어 신입 고졸 채용공고 찾아줘.",
-  "query": "서울 AI 엔지니어 신입 고졸 채용공고 찾아줘.",
-  "status": "complete",
-  "normalized_entities": {
-    "지역": "서울",
-    "직무": "인공지능/머신러닝",
-    "경력": "신입",
-    "학력": "고등학교졸업이상"
-  },
-  "url": "https://www.saramin.co.kr/zf_user/search?searchType=search?...",
-  "crawled_count": 12,
-  "retrieved_job_info_list": [
-    "********** ... 공고 요약 텍스트 ... **********"
-  ],
-  "retrieved_scores": [0.91, 0.87, 0.82, 0.79, 0.75],
-  "user_response": "서울 지역 신입 AI 엔지니어 채용공고를 우선순위로 정리하면 다음과 같습니다..."
-}
-```
-
-### 5.3 주요 출력 필드 의미
-
-| 필드 | 의미 |
+| 항목 | 내용 |
 | --- | --- |
-| `status` | `complete` 또는 `incomplete` |
-| `message` | 사용자에게 전달할 안내 문구 |
-| `missing_fields` | 추가 입력이 필요한 슬롯 목록 |
-| `normalized_entities` | URL 매핑 가능한 표준 슬롯 값 |
-| `url` | 생성된 사람인 검색 URL |
-| `crawled_count` | 수집된 상세 공고 수 |
-| `retrieved_job_info_list` | 검색 상위 문서(파싱 텍스트) |
-| `retrieved_scores` | 각 문서의 결합 점수 |
-| `user_response` | 최종 자연어 응답 |
+| 해결 문제 | 자연어 채용 검색 요청을 구조화된 검색 조건으로 변환하고, 실제 공고를 수집·선별·요약해 추천 |
+| 핵심 강점 | LangGraph 파이프라인, BM25+임베딩 하이브리드 검색, 비동기 Job Polling API, Docker/GCP 배포 |
+| 정량 성과 | NER Micro F1 `0.9214`, Hybrid `nDCG@5 0.7015`, Crawl CSR `0.9565`, E2E 평균 `4.83s` |
+| 데모 | 프론트엔드: [https://job-search-ai.netlify.app/](https://job-search-ai.netlify.app/) |
 
-## 6. 디렉토리 구조
+## 1. 한 줄 소개
 
-```text
-AI/
-├── src/
-│   ├── graph.py
-│   ├── node.py
-│   ├── router.py
-│   ├── state/
-│   └── tools/
-├── data/
-│   ├── retrieval/
-│   └── url_exchager/
-├── tests/
-│   ├── test_graph.py
-│   └── test_router.py
-├── legacy/
-│   ├── api/
-│   ├── notebooks/
-│   └── src/
-├── tech_spec_docs/
-├── img/
-├── run_local.py
-├── langgraph.json
-├── pyproject.toml
-└── README.md
-```
+자연어 기반 채용공고 검색을 위해 슬롯 추출, 정규화, 크롤링, 하이브리드 검색, 응답 생성을 결합한 AI 채용 검색 시스템입니다.
 
-핵심 디렉토리 역할은 아래와 같다.
+## 2. 해결하려는 문제
 
-- `src`: 현재 운영 파이프라인의 코어 코드
-- `src/tools`: 크롤링/파싱/검색/LLM 등 기능 구현 계층
-- `src/state`: 그래프 상태 타입 정의 계층
-- `data`: URL 매핑, 동의어, 검색 평가용 데이터
-- `tests`: 라우팅 및 그래프 로직 검증 코드
-- `legacy`: 이전 구조 코드 보존 영역
-- `tech_spec_docs`: 리팩터링/마이그레이션 기술 문서
+일반적인 채용 검색은 `백엔드`, `서울`, `신입`처럼 키워드를 직접 조합해야 하고, 여러 조건이 섞인 자연어 요청을 안정적으로 반영하기 어렵습니다. 실제 사용자는 `서울 백엔드 신입 대졸 채용공고 찾아줘`처럼 지역, 직무, 경력, 학력 조건을 한 문장으로 입력하기 때문에, 단순 키워드 검색만으로는 원하는 공고를 빠르게 찾기 어렵습니다.
 
-## 7. 기술 스택
+이 프로젝트는 자연어 질의를 그대로 받되, 내부적으로는 `지역 / 직무 / 경력 / 학력` 슬롯으로 구조화하고, 이를 실제 검색 URL과 공고 수집 파이프라인에 연결해 조건에 맞는 공고를 추천합니다. 구현 자체보다도, `얼마나 동작하는지`, `왜 이 구조를 선택했는지`, `운영 시 어떤 문제가 있었고 어떻게 개선했는지`까지 보이도록 설계와 평가를 함께 정리했습니다.
 
-### 7.1 런타임/오케스트레이션
+## 3. 핵심 기능
 
-- `Python 3.12`
-- `LangGraph`
-- `uv`
+- 자연어 질의에서 `지역 / 직무 / 경력 / 학력` 슬롯 추출
+- 동의어 사전 기반 슬롯 정규화와 누락 정보 안내
+- 정규화된 슬롯을 사람인 검색 URL로 변환
+- `view-ajax` 기반 상세 공고 수집과 교육성 공고 필터링
+- 공고 제목, 요약, 상세, 지원 방법, 기업 정보, 복리후생, 지원자 통계 파싱
+- BM25 + 임베딩 기반 하이브리드 검색으로 상위 공고 선별
+- 상위 결과를 바탕으로 최종 추천 응답 생성
+- 동기 `POST /query` API와 비동기 Job Polling API 제공
+- 진행 상태를 `queued -> running -> done / failed`와 단계 라벨로 노출
 
-### 7.2 데이터 수집/파싱
+### 사용자 흐름
 
-- `selenium`
-- `webdriver-manager`
-- `beautifulsoup4`
-- `lxml`
+`사용자 입력 -> 슬롯 추출 -> 슬롯 정규화 -> 정보 부족 시 incomplete 종료 -> URL 매핑 -> 공고 수집 -> 공고 파싱 -> 하이브리드 검색 -> 최종 응답 생성`
 
-### 7.3 검색/ML
+## 4. 시스템 아키텍처
 
-- `transformers`
-- `torch`
-- `pytorch-crf`
-- `sentence-transformers`
-- `scikit-learn`
-- `numpy`
+### LangGraph 파이프라인
 
-### 7.4 LLM/임베딩
+현재 실제 LangGraph 흐름은 아래와 같습니다.
 
-- `langchain`
-- `langchain-openai`
-- `OpenAI API` (`USE_OPENAI_MODELS=true` 시)
+`singleton_model -> predict_entities -> normalize_entities -> incomplete_end | map_url -> crawl_html -> parse_job_info -> search_hybrid -> generate_user_response`
 
-### 7.5 API/서빙 및 기타
+![LangGraph 파이프라인](img/Option%20A_B%20Decision%20Flow-2026-03-04-093254.png)
 
-- `fastapi`
-- `uvicorn`
-- `python-dotenv`
+### 단계별 구조
 
-### 7.6 배포/컨테이너/브라우저 테스트
+| 단계 | 역할 | 핵심 출력 |
+| --- | --- | --- |
+| `singleton_model` | 모델 캐시 초기화 및 재사용 | NER/임베딩/응답 생성 리소스 |
+| `predict_entities` | 사용자 입력에서 슬롯 추출 | `지역`, `직무`, `경력`, `학력` |
+| `normalize_entities` | 동의어 정규화 및 필수 슬롯 검증 | `normalized_entities`, `missing_fields`, `status` |
+| `map_url` | 검색 가능한 사람인 URL 생성 | `url` |
+| `crawl_html` | `view-ajax` 기반 상세 공고 수집 | `html_contents`, `crawled_count` |
+| `parse_job_info` | HTML을 읽기 쉬운 공고 텍스트로 변환 | `job_info_list` |
+| `search_hybrid` | BM25 + 임베딩 기반 상위 공고 선별 | `retrieved_job_info_list`, `retrieved_scores` |
+| `generate_user_response` | 상위 공고를 바탕으로 최종 추천 문장 생성 | `user_response` |
 
-- `Netlify`
-- `Docker`
-- `Playwright`
+### 설계 의사결정
 
-## 8. 상태/설정 키 레퍼런스
-
-### 8.1 GraphState 핵심 키
-
-| 그룹 | 키 |
+| 설계 선택 | 이유 |
 | --- | --- |
-| 입력 | `user_input`, `query` |
-| 모델 캐시 | `bert_model_name`, `device`, `bert_model`, `tokenizer`, `crf`, `embedding_model`, `llm` |
-| 엔티티 | `entities`, `지역`, `직무`, `경력`, `학력`, `status`, `message`, `missing_fields`, `normalized_entities` |
-| URL/크롤링/파싱 | `url`, `max_jobs`, `html_contents`, `crawled_count`, `job_info_list` |
-| 검색 | `retriever`, `retrieval_top_k`, `retrieval_combination_method`, `retrieval_use_query_expansion`, `retrieval_bm25_weight`, `retrieval_embedding_weight`, `retrieved_job_info_list`, `retrieved_scores` |
-| 응답 | `user_response` |
+| LangGraph 사용 | 검색 플로우가 단순 함수 호출이 아니라 `정상 검색`과 `정보 부족 종료` 분기를 갖기 때문에, 파이프라인과 상태 전이를 명시적으로 관리하기 위해 선택했습니다. |
+| `node / state / tools` 분리 | 오케스트레이션, 상태 계약, 도메인 로직을 분리해 유지보수성과 확장성을 높였습니다. |
+| OpenAI 경로 + 로컬 fallback 유지 | 운영 환경과 실험 환경을 모두 고려해 OpenAI structured output 경로와 로컬 모델 경로를 함께 유지했습니다. |
+| 비동기 Job Polling 구조 도입 | 장시간 동기 요청으로 인한 타임아웃과 사용자 대기 문제를 줄이기 위해 `/query/jobs` 기반 비동기 흐름을 추가했습니다. |
+| `view-ajax` 기반 수집 | raw HTML만으로는 상세 공고 핵심 정보가 누락되는 문제가 있어, 브라우저 전체 렌더링보다 가벼우면서도 정확도를 유지할 수 있는 `view-ajax` 수집 방식으로 전환했습니다. |
+| 추천 공고 1건 고정 | 최종 응답이 여러 공고를 애매하게 섞는 문제를 줄이기 위해, 리트리버 1위 공고를 기준으로 추천 대상을 고정했습니다. |
 
-### 8.2 `.env` 주요 키
+### REST API 요약
 
-| 키 | 용도 |
+#### `GET /health`
+
+| 항목 | 내용 |
 | --- | --- |
-| `USE_OPENAI_MODELS` | OpenAI 모델 사용 여부(`true/false`) |
-| `OPENAI_API_KEY` | OpenAI 인증 키 |
-| `NER_MODEL_NAME` | 엔티티 추출 모델명 |
-| `RESPONSE_MODEL_NAME` | 최종 응답 생성 모델명 |
-| `EMBEDDING_MODEL_NAME` | 임베딩 모델명 |
-| `OPENAI_TIMEOUT_SECONDS` | OpenAI 호출 타임아웃 |
-| `OPENAI_MAX_RETRIES` | OpenAI 재시도 횟수 |
-| `OPENAI_BASE_URL` | OpenAI API 베이스 URL |
-| `MAX_JOBS` | 최대 크롤링 개수 |
-| `TOP_K` | 검색 상위 결과 개수 |
-| `USE_QUERY_EXPANSION` | 검색어 확장 사용 여부 |
-| `FUSE_METHOD` | 결합 방식 설정 |
-| `RRF_K` | RRF 파라미터 |
+| 목적 | 서버 상태 확인 |
+| 요청 필드 | 없음 |
+| 주요 응답 필드 | `status` |
+| 상태값 의미 | `ok`: 서버가 요청을 받을 수 있는 상태 |
 
-## 9. 검증 방법(추천 테스트 명령)
+#### `POST /query`
 
-### 9.1 문서-코드 정합성 점검
+| 항목 | 내용 |
+| --- | --- |
+| 목적 | 동기 방식으로 채용 검색 요청을 즉시 처리 |
+| 요청 필드 | `user_input: string` |
+| 주요 응답 필드 | `status`, `message`, `entities`, `missing_fields`, `normalized_entities`, `url`, `crawled_count`, `retrieved_job_info_list`, `retrieved_scores`, `user_response` |
+| 상태값 의미 | `complete`: 검색과 응답 생성까지 완료, `incomplete`: 필수 슬롯이 부족해 추가 입력 필요 |
 
-```bash
-rg -n "프로젝트 소개|실행방법|워크플로우\\(머메이드\\)|노드별 상세 동작|최종 출력|디렉토리 구조" README.md
-```
+#### `POST /query/jobs`
 
-### 9.2 라우팅 단위 테스트
+| 항목 | 내용 |
+| --- | --- |
+| 목적 | 장시간 검색 작업을 비동기로 접수 |
+| 요청 필드 | `user_input: string` |
+| 주요 응답 필드 | `job_id`, `jobId`, `status`, `step`, `step_label` |
+| 상태값 의미 | `queued`: 대기열 등록 완료 |
 
-```bash
-uv run pytest -q tests/test_router.py
-```
+#### `GET /query/jobs/{job_id}`
 
-### 9.3 그래프 경로 점검
+| 항목 | 내용 |
+| --- | --- |
+| 목적 | 비동기 검색 작업의 현재 상태 조회 |
+| 요청 필드 | 경로 파라미터 `job_id` |
+| 주요 응답 필드 | `status`, `step`, `step_label`, `result`, `message` |
+| 상태값 의미 | `queued`: 대기 중, `running`: 처리 중, `done`: 완료, `failed`: 실패 |
 
-```bash
-uv run pytest -q tests/test_graph.py
-```
+#### Job 상태값
 
-### 9.4 로컬 스모크 실행
+| 상태값 | 의미 |
+| --- | --- |
+| `queued` | 작업이 큐에 접수된 상태 |
+| `running` | 워커가 검색 작업을 수행 중인 상태 |
+| `done` | 결과 생성이 완료된 상태 |
+| `failed` | 처리 중 예외가 발생한 상태 |
 
-```bash
-uv run python run_local.py
-```
+#### Job 단계값
 
-### 9.5 LangGraph 개발 서버 점검
+| 단계값 | 의미 |
+| --- | --- |
+| `queued` | 대기열 처리 중 |
+| `analyzing` | 질문 분석 중 |
+| `collecting` | 공고 수집 중 |
+| `parsing` | 공고 분석 중 |
+| `ranking` | 맞춤 공고 선별 중 |
+| `writing` | 답변 작성 중 |
 
-```bash
-uv run langgraph dev
-```
+### 아키텍처 관점에서 강조하고 싶은 점
 
-### 9.6 프론트-백엔드 URL 연동 통합 테스트
+- 정보가 부족하면 무리하게 검색을 진행하지 않고 `incomplete`로 종료해 추가 정보를 요청합니다.
+- 검색, 파싱, 응답 생성 전 단계가 상태 기반으로 분리되어 있어 병목 지점과 실패 지점을 추적하기 쉽습니다.
+- 운영 환경에서는 동시성 제한, 메모리 로그, TTL 정리, Job 상태 조회 같은 안정성 장치가 포함되어 있습니다.
 
-- 프론트엔드는 Netlify 배포본과 별도로 로컬 개발 서버를 실행해 테스트했다.
-- 백엔드는 `Dockerfile` 기반으로 이미지를 빌드하고 컨테이너를 실행해 API 서버를 구동했다.
-- 프론트엔드 로컬 서버가 백엔드 컨테이너 URL을 바라보도록 설정한 뒤, 검색 요청부터 응답 렌더링까지 전체 연동을 점검했다.
+## 5. 기술 스택
 
-### 9.7 Playwright E2E 테스트
+| 구분 | 기술 | 사용 목적 |
+| --- | --- | --- |
+| Language | Python 3.12 | API, 크롤링, 검색, 평가 스크립트 전반 구현 |
+| Package Manager | uv | 개발 환경 재현성과 의존성 관리 단순화 |
+| API | FastAPI | 동기/비동기 채용 검색 API 제공 |
+| Orchestration | LangGraph | 단계별 상태 전이와 분기 흐름 관리 |
+| NER | OpenAI structured output, 로컬 BERT+CRF fallback | 슬롯 추출 일관성 확보와 fallback 경로 유지 |
+| Retrieval | BM25, OpenAI Embeddings, 로컬 임베딩 fallback | 키워드 일치와 의미 유사도를 함께 반영한 검색 |
+| Crawling | requests, BeautifulSoup, lxml | `view-ajax` 기반 상세 공고 수집 및 HTML 파싱 |
+| Parsing | BeautifulSoup 기반 커스텀 파서 | 공고 텍스트를 검색 가능한 문서 형태로 정리 |
+| Infra | Docker | 실행 환경을 컨테이너로 표준화 |
+| Deployment | Netlify, GCP VM, Cloud Build | 프론트 공개 배포와 백엔드 자동 롤아웃 구성 |
+| Ops | systemd, Nginx | VM에서 서비스 재시작과 리버스 프록시 처리 |
 
-- 실제 브라우저 환경에서 검색어 입력, API 호출, 결과 렌더링, 오류 응답 처리까지 `Playwright`로 자동화 테스트했다.
-- 수동 확인과 별도로 반복 가능한 E2E 시나리오를 운영해 프론트엔드와 백엔드의 통합 동작을 함께 검증했다.
+## 6. 성능/평가 지표
 
-## 10. GCP 전체 배포 파이프라인
+프로젝트를 단순 기능 구현으로 끝내지 않고, `슬롯 추출`, `크롤링`, `검색`, `최종 응답`, `E2E 운영 성능`까지 각각 측정 가능한 형태로 정리했습니다.
 
-이 프로젝트의 백엔드 운영 파이프라인은 `GCP` 기준으로 구성되어 있으며, `main` 브랜치 반영부터 운영 서버 교체까지 대부분 자동화되어 있다.
+### 6.1 NER 평가
 
-### 10.1 전체 흐름
+OpenAI `json_schema` 기반 슬롯 추출 경로를 50건 기준으로 평가했습니다. 아래 수치는 전체 문장 정확도가 아니라 슬롯 추출 기준의 성능이며, `0.9214`는 slot-level micro F1입니다.
 
-1. GitHub `main` 브랜치에 코드가 푸시되면 `Cloud Build Trigger`가 자동으로 실행된다.
-2. `Cloud Build`가 현재 저장소의 `Dockerfile`로 백엔드 이미지를 빌드한다.
-3. 빌드된 이미지는 `Artifact Registry`에 빌드 태그와 `latest` 태그로 푸시된다.
-4. 이후 `Cloud Build`가 운영 `GCP VM`에 접속해 `jobsearch-api` 서비스를 재시작한다.
-5. VM의 `systemd` 서비스는 재시작 전에 최신 `latest` 이미지를 pull한 뒤 기존 컨테이너를 교체 실행한다.
-6. 외부 요청은 `Nginx`가 `HTTPS`로 받아 내부 `127.0.0.1:8000`의 FastAPI 컨테이너로 프록시한다.
+| 지표 | 값 |
+| --- | ---: |
+| Micro F1 | `0.9214` |
+| Macro F1 | `0.9099` |
+| 문장 단위 Exact Match | `53.06%` |
+| 실패 호출 수 | `1 / 50` |
 
-### 10.2 구성 요소 요약
+| 슬롯 | 정확도 | 해석 |
+| --- | ---: | --- |
+| 지역 | `54.00%` | 세부 지역 표현을 상위 canonical 값으로 정규화하는 단계가 주요 약점 |
+| 직무 | `94.00%` | 직무 추출은 비교적 안정적 |
+| 경력 | `95.92%` | 신입/경력 표현 추출 정확도가 높음 |
+| 학력 | `98.00%` | 학력 추출은 가장 안정적 |
 
-- `GitHub`: 소스 저장소와 `main` 브랜치 기준 배포 시작점
-- `Cloud Build`: 이미지 빌드, Registry 푸시, VM 재시작 자동화
-- `Artifact Registry`: 운영 배포용 Docker 이미지 저장소
-- `GCP VM`: 실제 백엔드 컨테이너가 실행되는 서버
-- `systemd + Docker`: 최신 이미지 pull 및 컨테이너 교체 실행 담당
-- `Nginx`: 외부 HTTPS 요청을 내부 API 서버로 전달
+### 6.2 크롤링 KPI
 
-### 10.3 운영 검증 포인트
+2026-03-15 ~ 2026-03-16 기준 크롤링 운영 지표입니다.
 
-- 새 `main` 커밋 이후 `Cloud Build`가 성공 상태로 끝나는지 확인한다.
-- `Artifact Registry`의 `latest` 태그가 최신 빌드 기준으로 갱신됐는지 확인한다.
-- VM에서 `jobsearch-api` 서비스가 정상 실행 중인지 확인한다.
-- 외부 엔드포인트 `/health`와 `/query/jobs` 호출이 정상 응답하는지 확인한다.
-- 자동 반영이 실패하면 VM에서 `jobsearch-api`를 수동 재시작해 복구할 수 있다.
+| 지표 | 값 | 의미 |
+| --- | ---: | --- |
+| CSR | `0.9565` | 전체 시도 대비 성공 수집 비율 |
+| VPCR | `0.9091` | 성공 수집 중 유효 공고 비율 |
+| duplicate_rate | `0.0455` | 중복 공고 비율 |
+| invalid_rate | `0.0455` | 유효하지 않은 공고 비율 |
+
+| 원본 통계 | 값 |
+| --- | ---: |
+| attempt | `23` |
+| success | `22` |
+| valid | `20` |
+| duplicate | `1` |
+| invalid | `1` |
+
+### 6.3 검색/랭킹 품질
+
+오프라인 검색 평가 기준, Hybrid 방식이 BM25와 OpenAI Embedding 단독 방식보다 더 높은 성능을 기록했습니다.
+
+| 방법 | nDCG@5 | Recall@5 | MRR@5 |
+| --- | ---: | ---: | ---: |
+| BM25 | `0.6482` | `0.6624` | `0.7421` |
+| Hybrid | `0.7015` | `0.7169` | `0.8034` |
+| OpenAI Embedding | `0.5938` | `0.6112` | `0.6765` |
+
+| 비교 | 개선치 |
+| --- | --- |
+| Hybrid - BM25 | `nDCG@5 +0.0533`, `Recall@5 +0.0545`, `MRR@5 +0.0613` |
+| BM25 - OpenAI Embedding | `nDCG@5 +0.0544`, `Recall@5 +0.0512`, `MRR@5 +0.0656` |
+| Hybrid - OpenAI Embedding | `nDCG@5 +0.1077`, `Recall@5 +0.1057`, `MRR@5 +0.1269` |
+
+### 6.4 최종 LLM 응답 평가
+
+최종 응답 품질은 단순 문장 생성이 아니라, 근거 기반 설명과 추천 적합성을 함께 평가했습니다.
+
+| 지표 | Mean | 95% CI |
+| --- | ---: | --- |
+| Evidence | `88.42` | `[85.91, 90.76]` |
+| Recommendation | `90.67` | `[88.05, 93.02]` |
+| Overall | `89.21` | `[86.97, 91.24]` |
+| Pass Rate | `83.3%` | `-` |
+
+| 판정 항목 | 값 |
+| --- | ---: |
+| threshold profile | `balanced` |
+| sample 수 | `12 / 12` |
+| 통과 건수 | `10` |
+| 실패 건수 | `2` |
+| 실패율 | `16.7%` |
+
+### 6.5 E2E 운영 성능
+
+Job Polling 기준 E2E 운영 성능을 측정했습니다.
+
+| 항목 | 결과 |
+| --- | ---: |
+| accept latency 평균 | `178.62ms` |
+| accept latency p95 | `212.47ms` |
+| e2e latency 평균 | `4826.35ms` |
+| e2e latency p95 | `7314.88ms` |
+| system success rate | `1.0` |
+| failed count | `0 / 20` |
+| 메모리 지표 수집 | `available = true` |
+
+이 결과는 `워밍업 2건`, `본측정 20건`, `동시성 2` 조건에서 측정한 값입니다.
+
+## 7. 트러블슈팅
+
+### 7.1 Netlify 504와 장시간 동기 응답 문제
+
+| 항목 | 내용 |
+| --- | --- |
+| 문제 | 프론트에서 검색 요청 시 간헐적으로 `504`가 발생하고, 장시간 대기 후 실패하는 문제가 있었습니다. |
+| 원인 | 동기 `/query` 요청 한 건이 오래 걸리면 상위 프록시 타임아웃과 충돌했고, 동시성 1 환경에서는 후속 요청이 `429 busy`로 전이됐습니다. |
+| 해결 | `/query/jobs` + `/query/jobs/{job_id}` 기반 Job Polling API를 도입하고, 진행 단계를 `queued / running / done / failed`와 `analyzing ~ writing`으로 노출했습니다. |
+| 결과 | 장시간 동기 연결에 의존하지 않고 검색 상태를 점진적으로 조회할 수 있게 되었고, 프론트와의 연동 안정성이 좋아졌습니다. |
+
+### 7.2 requests-only 크롤링 회귀와 `view-ajax` 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 문제 | 브라우저 의존을 줄이기 위해 raw HTML 기반 수집으로 단순화했을 때, 상세 공고 핵심 정보가 비어 수집 0건 회귀가 발생했습니다. |
+| 원인 | 사람인 상세 공고는 raw HTML만으로는 필요한 섹션이 안정적으로 노출되지 않았습니다. |
+| 해결 | 상세 공고 수집 경로를 `view-ajax` 기반 병렬 수집으로 전환하고, iframe fallback과 제목 필터링을 적용했습니다. |
+| 결과 | 브라우저 전체 렌더링보다 가볍게 운영하면서도 실제 공고 정보 수집 정확도를 유지할 수 있었습니다. |
+
+### 7.3 OOM과 메모리 피크 대응
+
+| 항목 | 내용 |
+| --- | --- |
+| 문제 | 장시간 요청과 크롤링/파싱/검색이 한 번에 몰리면 메모리 피크와 응답 지연 위험이 커졌습니다. |
+| 원인 | 요청당 수집 건수, 검색 상위 개수, 무거운 import, 중간 대용량 리스트가 동시에 메모리를 점유했습니다. |
+| 해결 | semaphore 기반 동시성 제한, `max_jobs`/`retrieval_top_k` 상한, 단계별 메모리 로그, 파싱/검색 이후 중간 리스트 해제, 지연 로딩을 적용했습니다. |
+| 결과 | 요청당 작업량을 통제하고 병목 지점을 관측할 수 있는 운영 구조를 갖췄습니다. |
+
+### 7.4 배포 이미지 드리프트와 롤아웃 일관성 문제
+
+| 항목 | 내용 |
+| --- | --- |
+| 문제 | 이미지를 빌드해 푸시하는 것만으로는 VM에서 실제 어떤 이미지가 실행 중인지 보장하기 어려웠습니다. |
+| 원인 | `latest` 태그만 갱신하고 실행 이미지 정리와 검증이 없으면, 배포 상태가 불명확해질 수 있었습니다. |
+| 해결 | Cloud Build에서 VM 재시작, 실행 이미지와 `latest` 일치 검증, Artifact Registry digest 정리, VM 로컬 앱 이미지 정리 단계를 추가했습니다. |
+| 결과 | 배포 후 실제 실행 중인 이미지와 저장소 상태를 일관되게 맞출 수 있게 되었고, 롤아웃 확인 절차가 단순해졌습니다. |
+
+## 8. 배포 구조
+
+### 전체 구성
+
+- 프론트엔드: Netlify 배포
+- 백엔드: Docker 컨테이너 기반 FastAPI 서버
+- 인프라: GCP VM + Nginx + systemd
+- CI/CD: Cloud Build
+
+### 배포 흐름
+
+`main push -> Cloud Build trigger -> Docker image build -> Artifact Registry push -> VM rollout -> AR/VM image cleanup -> health check`
+
+### 백엔드 운영 방식
+
+- 백엔드는 GCP VM 내부에서 Docker 컨테이너로 실행됩니다.
+- 외부 요청은 Nginx가 HTTPS로 받아 내부 FastAPI로 프록시합니다.
+- systemd가 서비스 재시작 시 최신 이미지를 pull하고 컨테이너를 교체합니다.
+- Cloud Build는 이미지 업로드뿐 아니라 VM 재시작과 이미지 정리까지 자동화합니다.
+
+### 왜 이런 구조를 선택했는가
+
+- 프론트와 백엔드를 분리해 각각의 배포 속도와 책임을 분리했습니다.
+- 컨테이너 기반으로 로컬과 운영 환경 차이를 줄였습니다.
+- Cloud Build와 VM 롤아웃을 연결해 수동 배포 실수를 줄였습니다.
+- 이미지 정리 검증까지 자동화해 `배포는 됐는데 실제 반영은 안 된 상태`를 방지했습니다.
+
+## 9. 데모 링크
+
+### 프론트엔드 데모
+
+- [https://job-search-ai.netlify.app/](https://job-search-ai.netlify.app/)
+
+### 샘플 질의
+
+- `서울 백엔드 신입 대졸 채용공고 찾아줘`
+- `경기 데이터 분석 3년차 석사 채용공고 추천해줘`
+- `서울 AI 엔지니어 신입 고졸 채용공고 찾아줘`
+- `서울 프론트엔드 경력 3년차 대졸 공고 보여줘`
+- `백엔드 신입 채용공고 찾아줘`
+
+### 사용 시 참고
+
+- 검색 결과는 공고 수집, 파싱, 검색, 응답 생성을 순차적으로 거치므로 수 초의 응답 시간이 발생할 수 있습니다.
+- 비동기 Job Polling 구조를 사용하기 때문에, 긴 검색 요청도 진행 상태를 확인하며 처리할 수 있습니다.
+
+## 10. 향후 개선 계획
+
+- `지역` canonicalization을 더 정교하게 개선해 NER 문장 Exact Match를 높이기
+- 검색 평가용 judged dataset을 확대해 retrieval 지표의 신뢰도를 높이기
+- 최종 LLM 평가 결과와 E2E 결과를 자동으로 산출·보관하는 리포트 파이프라인 추가
+- Job 결과 저장소를 메모리 기반에서 영속 저장소 기반으로 확장하기
+- 인증, 모니터링, 알림 체계를 추가해 운영 안정성 강화하기
+- README용 GIF, 화면 스크린샷, 평가 리포트 시각화를 추가해 첫인상 강화하기
+
+## 참고 메모
+
+- 이 README는 현재 `develop` 기준의 활성 코드 경로와 운영 구조를 설명합니다.
+- 백엔드 실 URL은 보안상 공개하지 않았습니다.
+- 성능 수치 중 NER는 저장소 내 평가 결과를 기준으로 작성했고, 나머지 지표는 최신 평가 결과 정리본을 기준으로 반영했습니다.
