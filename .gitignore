@@ -15,6 +15,7 @@ AGENTS.md
 GCP.README.md
 
 /.ops/thread_notes/
+/eval/e2e/*.md
 /eval/crawl/*.md
 /eval/**/*.md
 
