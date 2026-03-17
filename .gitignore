@@ -15,3 +15,8 @@ AGENTS.md
 GCP.README.md
 
 /.ops/thread_notes/
+
+# evaluation markdown outputs
+eval/retrieval/results/retrieval_eval_report.md
+eval/retrieval/results/retrieval_eval_analysis.md
+problem_md/openai-key-format.md
