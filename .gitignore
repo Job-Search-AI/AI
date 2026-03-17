@@ -16,3 +16,4 @@ GCP.README.md
 
 /.ops/thread_notes/
 /eval/crawl/*.md
+/eval/**/*.md
