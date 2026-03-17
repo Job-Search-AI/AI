@@ -15,3 +15,4 @@ AGENTS.md
 GCP.README.md
 
 /.ops/thread_notes/
+/eval/**/*.md
