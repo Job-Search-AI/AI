@@ -50,7 +50,7 @@ def generate_response(user_prompt, documents, fixed_doc=None):
 
     guide = [
         "상위 공고를 모두 참고해서 답변한다.",
-        "추천 공고는 반드시 리트리버 랭킹 1위 공고만 선택한다.",
+        "추천 공고는 반드시 랭킹 1위 공고만 선택한다.",
         "제공된 문서에 있는 정보만 쓰고 없는 내용은 추측하지 않는다.",
         "공고 내용을 길게 나열하지 말고 핵심만 짧게 축약한다.",
         "왜 추천하는지 질문 기준(직무, 지역, 경력, 학력, 마감)으로 2~3문장으로 설명한다.",
@@ -74,7 +74,7 @@ def generate_response(user_prompt, documents, fixed_doc=None):
         prompt_lines = []
         for line in guide:
             prompt_lines.append(line)
-        prompt_lines.append("고정 추천 공고(리트리버 1위):")
+        prompt_lines.append("고정 추천 공고(랭킹 1위):")
         prompt_lines.append(fixed_doc)
         prompt_lines.append("상위 공고 목록(참고용):")
         prompt_lines.append(documents_text)
