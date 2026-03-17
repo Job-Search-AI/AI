@@ -46,7 +46,7 @@
 
 `singleton_model -> predict_entities -> normalize_entities -> incomplete_end | map_url -> crawl_html -> parse_job_info -> search_hybrid -> generate_user_response`
 
-![LangGraph 파이프라인](img/Option%20A_B%20Decision%20Flow-2026-03-04-093254.png)
+<img src="img/Option%20A_B%20Decision%20Flow-2026-03-04-093254.png" width="300">
 
 ### 단계별 구조
 
