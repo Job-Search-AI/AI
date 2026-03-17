@@ -9,7 +9,9 @@ tech_spec_docs/
 AGENTS.md
 .langgraph_api/
 .pytest_cache/
+.ruff_cache/
 .uv-cache/
+.venv/
 .DS_Store
 .codex/
 GCP.README.md
