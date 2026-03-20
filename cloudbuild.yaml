@@ -42,7 +42,7 @@ steps:
           --project="$PROJECT_ID" \
           --zone="${_VM_ZONE}" \
           --quiet \
-          --command="set -euo pipefail; IMAGE_REPO=${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}; sudo systemctl restart ${_SERVICE_NAME}; sleep 5; sudo systemctl is-active ${_SERVICE_NAME}; sudo docker inspect ${_CONTAINER_NAME} --format 'container_image_id={{.Image}} started={{.State.StartedAt}}'; sudo docker image inspect $${IMAGE_REPO}:latest --format 'latest_id={{.Id}} repodigests={{.RepoDigests}}'"
+          --command="set -euo pipefail; IMAGE_REPO=${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}; sudo systemctl restart ${_SERVICE_NAME}; sleep 5; sudo systemctl is-active ${_SERVICE_NAME}; sudo docker inspect ${_CONTAINER_NAME} --format 'container_image_id={{.Image}} started={{.State.StartedAt}}'; sudo docker image inspect \$${IMAGE_REPO}:latest --format 'latest_id={{.Id}} repodigests={{.RepoDigests}}'"
 
 images:
   - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$BUILD_ID
