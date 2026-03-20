@@ -9,9 +9,19 @@ tech_spec_docs/
 AGENTS.md
 .langgraph_api/
 .pytest_cache/
+.ruff_cache/
 .uv-cache/
+.venv/
 .DS_Store
 .codex/
 GCP.README.md
 
 /.ops/thread_notes/
+/eval/e2e/*.md
+/eval/crawl/*.md
+/eval/**/*.md
+
+# evaluation markdown outputs
+eval/retrieval/results/retrieval_eval_report.md
+eval/retrieval/results/retrieval_eval_analysis.md
+problem_md/openai-key-format.md
