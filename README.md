@@ -43,7 +43,7 @@
 
 현재 실제 LangGraph 흐름은 아래와 같습니다.
 
-<img src="img/Option%20A_B%20Decision%20Flow-2026-03-04-093254.png" width="300">
+<img src="img/langgraph-pipeline-ko.svg" alt="LangGraph 파이프라인" width="420">
 
 ### 단계별 구조
 
